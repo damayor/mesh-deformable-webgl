@@ -20,7 +20,7 @@ const  TRIANGLE_STRIP = 0x0005;
 const  TRIANGLE_FAN   = 0x0006;
 
 var perspectiveType = "perspective";
-var vertexClic = "cameraClic";//"2ndClic";  //3rdVertex
+var clicTool = "cameraClic";//"2ndClic";  //3rdVertex
 
 var t = 0;
 var xClick =0;
@@ -29,7 +29,7 @@ var isDrawing = false;
 var zDragFactor = 2;
 
 
-var orthoWidth = 5, orthoHeight = 5;
+var orthoWidth = 10, orthoHeight = 10;
 const FOV = 55 * Math.PI / 180;   // in radians
 const zNear = 0.1;
 const zFar = 100.0;
@@ -88,9 +88,9 @@ $(document).ready(
 		{		$("input").click(function ()  {	
         
         perspectiveType = $('input:radio[name=camera_perspective]:checked').val();
-        vertexClic = $('input:radio[name=order_clic]:checked').val();
+        clicTool = $('input:radio[name=order_clic]:checked').val();
         //figureSelected = $('input:radio[name=camera_figure]:checked').val();
-			  //alert( vertexClic +'-' + perspectiveType);			 
+			  //alert( clicTool +'-' + perspectiveType);			 
 			}   );
 		 }
 );
@@ -228,7 +228,7 @@ function main() {
     
     var actualZ = shapeDraw.vertices[23];
     
-   if(vertexClic == "1stClic")
+   if(clicTool == "1stClic")
    {
      //TODO  
      //xClick1 = 2*event.clientX/gl.canvas.width-1;
@@ -237,7 +237,7 @@ function main() {
          //xClick1 = shapeDraw.vertices[0];
          //yClick1 = shapeDraw.vertices[1];  
    }
-    if(vertexClic == "2ndClic")
+    if(clicTool == "2ndClic")
    {
      if(isDrawing)   
      {
@@ -257,7 +257,7 @@ function main() {
        gl.canvas.removeEventListener("mousemove", setEndVertex);   
      });  
    }
-    if(vertexClic == "3rdClic")
+    if(clicTool == "3rdClic")
     {
       if(isDrawing)   
       {
@@ -493,7 +493,7 @@ function getCubeVertices(p1x, p1y, p1z,
 //7:
 // De {-1, 1} x {-1, 1}
 function canvasMouseNormalizedPos(event) {
-  var xOffset = 0.028; 
+  var xOffset = 0.0000000028; 
       
   var x = 2*event.clientX/gl.canvas.width-1 -xOffset;
   var y = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
@@ -575,7 +575,12 @@ UI.prototype.update = function(timeSinceStart) {
                 vec3.fromValues(eye[0], eye[1], eye[2]), 
                 vec3.fromValues(ctr[0], ctr[1], ctr[2]) , 
                 vec3.fromValues(0, 1, 0));
-  mat4.perspective(this.projection, FOV, gl.canvas.clientWidth / gl.canvas.clientHeight, zNear, zFar);
+  
+  if(perspectiveType == "perspective")
+    mat4.perspective(this.projection, FOV, gl.canvas.clientWidth / gl.canvas.clientHeight, zNear, zFar);
+  else if(perspectiveType == "orthogonal"){
+    mat4.ortho(this.projection, -orthoWidth/2,orthoWidth/2,  -orthoHeight/2,orthoHeight/2, zNear, zFar);
+  }
   mat4.multiply(this.modelViewProjection, this.projection, this.modelview);
   //  this.renderer.update(this.modelviewProjection, timeSinceStart);
   //@dep R3
@@ -592,7 +597,10 @@ document.onmousedown = function(event) {
   oldY = mouse.y;
   //   if(mouse.x >=  0 && mouse.x < 512 && mouse.y >= 0 && mouse.y < 512) {
   //     console.log("BUUUU");
-  mouseDown = true; //!ui.mouseDown(mouse.x, mouse.y);
+  if(clicTool == "cameraClic")
+    {
+    mouseDown = true; //!ui.mouseDown(mouse.x, mouse.y);
+    }
   //     // disable selection because dragging is used for rotating the camera and moving objects
   //     return false;
   //   }
@@ -634,7 +642,7 @@ document.onmouseup = function(event) {
   mouseDown = false;
 
   var mouse = canvasMousePos(event);
-  ui.mouseUp(mouse.x, mouse.y);
+  //ui.mouseUp(mouse.x, mouse.y);
     //@dep 5, UI6
 }
   
