@@ -10,12 +10,13 @@ const  TRIANGLE_STRIP = 0x0005;
 const  TRIANGLE_FAN   = 0x0006;
 
 var perspectiveType = "perspective";
-var clic = "3rd";
+var vertexClic = "2ndClic"; //2ndVertex //3rdVertex
 
 var t = 0;
 var xClick =0;
 var yClick =0;
 var isDrawing = false;
+var zDragFactor = 2;
 
 
 var orthoWidth = 5, orthoHeight = 5;
@@ -164,11 +165,12 @@ const pointDraw = {
 $(document).ready(
   
   function()
-		{		$("input[name^=camera]").click(function ()  {	
-        //cameraType = $('input:radio[name=camera_view]:checked').val();
+		{		$("input").click(function ()  {	
+        
         perspectiveType = $('input:radio[name=camera_perspective]:checked').val();
+        vertexClic = $('input:radio[name=order_clic]:checked').val();
         //figureSelected = $('input:radio[name=camera_figure]:checked').val();
-			  cosole.log( "-" + perspectiveType);			 
+			  //alert( vertexClic +'-' + perspectiveType);			 
 			}   );
 		 }
 );
@@ -221,7 +223,7 @@ function main() {
         shapeDraw.vertices[9] = xClick2;
         shapeDraw.vertices[10] = yClick2;    */
       }
-  
+  // 2nd clic
     function setEndVertex (event)
       {
        
@@ -229,7 +231,7 @@ function main() {
         xClick2 = 2*event.clientX/gl.canvas.width-1;
         yClick2 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
         
-        console.log("drawing "+ xClick2 +";"+ yClick2);
+        //console.log("drawing "+ xClick2 +";"+ yClick2);
         
         if(perspectiveType == "perspective" )
         {
@@ -243,7 +245,7 @@ function main() {
           yClick2 = yClick2*orthoHeight/2;
         }
         
-        console.log("true pos "+ xClick2 +";"+ yClick2);
+        //console.log("true pos "+ xClick2 +";"+ yClick2);
 
         shapeDraw.vertices[3] = xClick2;
         shapeDraw.vertices[4] = yClick1;
@@ -263,6 +265,21 @@ function main() {
         
         shapeDraw.vertices[21] = xClick2;
         shapeDraw.vertices[22] = yClick2;    
+      }
+  
+  
+  function set3rdVertex (event)
+               
+  {
+        isDrawing = true;
+        xClick1 = 2*event.clientX/gl.canvas.width-1;
+        yClick1 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
+        
+        shapeDraw.vertices[14] -= yClick1*zDragFactor;
+        shapeDraw.vertices[17] -=  yClick1*zDragFactor;
+        shapeDraw.vertices[20] -=  yClick1*zDragFactor;
+        shapeDraw.vertices[23] -=  yClick1*zDragFactor;       
+        
       }
 
   // Vertex shader program
@@ -318,31 +335,58 @@ function main() {
     shapeDraw = cubeLinesDraw;  //rectangleLinesDraw;  
     xClick1 = shapeDraw.vertices[0];
     yClick1 = shapeDraw.vertices[1];
-
     
-    if(isDrawing)   
+    var actualZ = shapeDraw.vertices[23];
+    
+   if(vertexClic == "1stClic")
+   {
+       //xClick1 = 2*event.clientX/gl.canvas.width-1;
+         //yClick1 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
+
+         //xClick1 = shapeDraw.vertices[0];
+         //yClick1 = shapeDraw.vertices[1];  
+   }
+    if(vertexClic == "2ndClic")
+   {
+     if(isDrawing)   
+     {
+       gl.canvas.addEventListener("mousemove", setEndVertex);  
+     }   
+     else
+     {
+       gl.canvas.addEventListener("mousedown", function (event)
+                                  {
+         isDrawing = true;
+       });  
+     }
+
+     gl.canvas.addEventListener("mouseup", function (event)
+                                {
+       isDrawing = false;  
+       gl.canvas.removeEventListener("mousemove", setEndVertex);   
+     });  
+   }
+
+    if(vertexClic == "3rdClic")
     {
-      gl.canvas.addEventListener("mousemove", setEndVertex);  
-    }   
-    else
-    {
-      gl.canvas.addEventListener("mousedown", function (event)
+      if(isDrawing)   
+      {
+        gl.canvas.addEventListener("mousemove", set3rdVertex);
+      }
+      else
+      {
+        gl.canvas.addEventListener("mousedown", function (event) {
+          isDrawing = true   
+        });
+      }
+
+      gl.canvas.addEventListener("mouseup", function (event)
                                  {
-        //xClick1 = 2*event.clientX/gl.canvas.width-1;
-        //yClick1 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
+        isDrawing = false;  
+        gl.canvas.removeEventListener("mousemove", set3rdVertex);   
+      } );
 
-        //xClick1 = shapeDraw.vertices[0];
-        //yClick1 = shapeDraw.vertices[1];  
-        isDrawing = true;
-      });  
     }
-
-    gl.canvas.addEventListener("mouseup", function (event)
-    {
-      isDrawing = false;  
-      gl.canvas.removeEventListener("mousemove", setEndVertex);   
-    });  
-
     drawScene(gl, shadersInfo, deltaTime, shapeDraw);
 
     requestAnimationFrame(render);
