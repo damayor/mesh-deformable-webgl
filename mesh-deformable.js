@@ -1,3 +1,13 @@
+var ui;
+var gl ;
+var eye = vec3.fromValues(0,0,0);
+var ctr = vec3.fromValues(0.0, 0.0, -10.0);
+var angleX = 0;
+var angleY = 0;
+var zoomZ = 2.5;
+const canvas = document.querySelector('#glcanvas');
+
+
 var timeParameter = 0.0;
 var rotYSpeed = 2;
 var transSpeed = 0.001;
@@ -10,7 +20,7 @@ const  TRIANGLE_STRIP = 0x0005;
 const  TRIANGLE_FAN   = 0x0006;
 
 var perspectiveType = "perspective";
-var vertexClic = "2ndClic"; //2ndVertex //3rdVertex
+var vertexClic = "cameraClic";//"2ndClic";  //3rdVertex
 
 var t = 0;
 var xClick =0;
@@ -20,16 +30,18 @@ var zDragFactor = 2;
 
 
 var orthoWidth = 5, orthoHeight = 5;
-const FOV = 60 * Math.PI / 180;   // in radians
+const FOV = 55 * Math.PI / 180;   // in radians
+const zNear = 0.1;
+const zFar = 100.0;
 
 var mouseX, mouseY;
 
 const threePointsDraw = {
   vertices: 
   [
-    1.0,  1.0,   -22.0, 
-    3.0,  -2.5,  -22.0,
-    3.0,  -2.5,  -15.0, 
+    1.0,  1.0,   -10.0, 
+    3.0,  -2.5,  -10.0,
+    3.0,  -2.5,  -5.0, 
   ],
   colors: [
     1.0,  0.0,  1.0,  1.0,
@@ -43,82 +55,6 @@ const threePointsDraw = {
   primitiveType: POINTS ,
 }
 
-const twoPointsDraw = {
-  vertices: 
-  [
-    0.0,  0.0,  -22.0, 
-    0.5,  -0.5,  -22.0, 
-  ],
-  colors: [
-    1.0,  0.0,  1.0,  1.0,
-    0.0,  1.0,  1.0,  1.0,
-  ],
-  indices: [    
-    0,  1,                  
-  ],
-  indexCount: 2,
-  primitiveType: POINTS ,
-}
-
-//check the 4 vertices of a rectangle
-const rectangleVerticesDraw = {
-  vertices: getRectangleVertices( twoPointsDraw.vertices[0],twoPointsDraw.vertices[1],twoPointsDraw.vertices[2],
-                                 twoPointsDraw.vertices[3],twoPointsDraw.vertices[4],twoPointsDraw.vertices[5],), 
-  colors: [
-    1.0,  0.0,  1.0,  1.0,
-    0.0,  1.0,  1.0,  1.0,
-    1.0,  1.0,  1.0,  1.0,
-    1.0,  1.0,  0.0,  1.0,
-    
-  ],
-  indices: [    
-    0,  1,  2,  3               
-  ],
-  indexCount: 4,
-  primitiveType: POINTS ,
-  
-}
-
-// Draw the rectangle
-const rectangleLinesDraw = {
-  vertices: getRectangleVertices( threePointsDraw.vertices[0],threePointsDraw.vertices[1],threePointsDraw.vertices[2],
-                                 threePointsDraw.vertices[3],threePointsDraw.vertices[4],threePointsDraw.vertices[5],
-                               ), 
-  colors: [
-    1.0,  0.0,  1.0,  1.0,
-    0.0,  1.0,  1.0,  1.0,
-    1.0,  1.0,  1.0,  1.0,
-    1.0,  1.0,  0.0,  1.0,
-  ],
-  indices: [    
-    0,  1,  3,  2,              
-  ],
-  indexCount: 4,
-  primitiveType: LINE_LOOP ,
-  
-}
-
-//check the eight vertices of a cube
-const cubePointsDraw = {
-  vertices: getCubeVertices( threePointsDraw.vertices[0],threePointsDraw.vertices[1],threePointsDraw.vertices[2],            threePointsDraw.vertices[3],threePointsDraw.vertices[4],threePointsDraw.vertices[5],
-   threePointsDraw.vertices[8],), 
-  colors: [
-    1.0,  0.0,  1.0,  1.0,
-    0.0,  1.0,  1.0,  1.0,
-    1.0,  1.0,  1.0,  1.0,
-    1.0,  1.0,  0.0,  1.0,
-    
-    1.0,  0.0,  0.0,  1.0,
-    0.0,  1.0,  0.0,  1.0,
-    1.0,  1.0,  1.0,  1.0,
-    0.0,  0.0,  1.0,  1.0,
-  ],
-  indices: [    
-    0,  1,  3,  2,  4, 5, 6, 7,            
-  ],
-  indexCount: 8,
-  primitiveType: POINTS, //LINE_LOOP ,
-}
 
 //draw the 12 lines of a cube
 const cubeLinesDraw = {
@@ -146,22 +82,6 @@ const cubeLinesDraw = {
 }
 
 
-// To test the click
-const pointDraw = {
-  vertices: 
-  [
-    0.0,  0.2,  -22.0, 
-  ],
-  colors: [
-    1.0,  0.0,  1.0,  1.0,
-  ],
-  indices: [    
-    0,                     
-  ],
-  indexCount: 1,
-  primitiveType: POINTS ,
-}
-
 $(document).ready(
   
   function()
@@ -182,14 +102,11 @@ main();
 // Start here
 // 2:
 function main() {
-  const canvas = document.querySelector('#glcanvas');
-  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
   
-  // gl.canvas.addEventListener("mousedown", function mousePos (event)
-  //                            {
-  //   xMouse = 2*event.clientX/gl.canvas.width-1;
-  //   yMouse = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
-  // });  
+  gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  
+  //window.onload from 2:
+    
   
   // If we don't have a GL context, give up now
   if (!gl) {
@@ -197,53 +114,25 @@ function main() {
     return;
   }
   
-   function setCubeExtrudeVertex (event)
-      {
-       //TODO
-       /* isDrawing = true;
-        xClick2 = 2*event.clientX/gl.canvas.width-1;
-        yClick2 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
-        
-        console.log("drawing "+ xClick2 +";"+ yClick2);
-        
-        if(perspectiveType == "perspective" )
-        {
-          xClick2 = xClick2*(22/2.414); ///zShape/tan(FOV/2)
-          yClick2 = yClick2*(22/2.414);
-        }
-        
-        console.log("true pos "+ xClick2 +";"+ yClick2);
-
-        shapeDraw.vertices[3] = xClick2;
-        shapeDraw.vertices[4] = yClick1;
-
-        shapeDraw.vertices[6] = xClick1;
-        shapeDraw.vertices[7] = yClick2;
-
-        shapeDraw.vertices[9] = xClick2;
-        shapeDraw.vertices[10] = yClick2;    */
-      }
+   
   // 2nd clic
     function setEndVertex (event)
       {
        
         isDrawing = true;
-        xClick2 = 2*event.clientX/gl.canvas.width-1;
-        yClick2 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
+        
+        
+        xClick2 = canvasMouseNormalizedPos( event).x ;
+        yClick2 = canvasMouseNormalizedPos( event).y ; 
         
         //console.log("drawing "+ xClick2 +";"+ yClick2);
         
-        if(perspectiveType == "perspective" )
+       // if(perspectiveType == "perspective" )
         {
           xClick2 = xClick2*(22*Math.tan(FOV/2)); ///zShape/tan(FOV/2)
           yClick2 = yClick2*(22*Math.tan(FOV/2)); // /2.414
         }
         
-        else if(perspectiveType == "orthogonal" )
-        {
-          xClick2 = xClick2*orthoWidth/2;
-          yClick2 = yClick2*orthoHeight/2;
-        }
         
         //console.log("true pos "+ xClick2 +";"+ yClick2);
 
@@ -272,13 +161,13 @@ function main() {
                
   {
         isDrawing = true;
-        xClick1 = 2*event.clientX/gl.canvas.width-1;
-        yClick1 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
+        xClick = canvasMouseNormalizedPos( event).x ;
+        yClick = canvasMouseNormalizedPos( event).y ; 
         
-        shapeDraw.vertices[14] -= yClick1*zDragFactor;
-        shapeDraw.vertices[17] -=  yClick1*zDragFactor;
-        shapeDraw.vertices[20] -=  yClick1*zDragFactor;
-        shapeDraw.vertices[23] -=  yClick1*zDragFactor;       
+        shapeDraw.vertices[14] -= yClick*zDragFactor;
+        shapeDraw.vertices[17] -=  yClick*zDragFactor;
+        shapeDraw.vertices[20] -=  yClick*zDragFactor;
+        shapeDraw.vertices[23] -=  yClick*zDragFactor;       
         
       }
 
@@ -325,6 +214,7 @@ function main() {
   };
 
   var then = 0;
+  ui = new UI();
 
   // Draw the scene repeatedly
   function render(now) {
@@ -340,7 +230,8 @@ function main() {
     
    if(vertexClic == "1stClic")
    {
-       //xClick1 = 2*event.clientX/gl.canvas.width-1;
+     //TODO  
+     //xClick1 = 2*event.clientX/gl.canvas.width-1;
          //yClick1 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
 
          //xClick1 = shapeDraw.vertices[0];
@@ -366,7 +257,6 @@ function main() {
        gl.canvas.removeEventListener("mousemove", setEndVertex);   
      });  
    }
-
     if(vertexClic == "3rdClic")
     {
       if(isDrawing)   
@@ -387,6 +277,10 @@ function main() {
       } );
 
     }
+    
+    //funcion que actualiza la posicion de la camara
+    tick(now);
+    
     drawScene(gl, shadersInfo, deltaTime, shapeDraw);
 
     requestAnimationFrame(render);
@@ -402,66 +296,40 @@ function drawScene(gl, shadersInfo, deltaTime, shapeData) {
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
   gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
-  
-
   // Clear the canvas before we start drawing on it.
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-  
-  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-  const zNear = 0.1;
-  const zFar = 100.0;
-  const projectionMatrix = mat4.create();
-
-  // note: glmatrix.js always has the first argument
-  // as the destination to receive the result.
-  /*mat4.perspective(projectionMatrix,
-                   fieldOfView,
-                   aspect,
-                   zNear,
-                   zFar);
-      //TODO en el bus             
-  */
       
-  if(perspectiveType == "perspective")
-  {
+  //if(perspectiveType == "perspective")
+  /*{
     mat4.perspective(projectionMatrix,
                      FOV,
                      aspect,
                      zNear,
                      zFar);
-  }
-  else if(perspectiveType == "orthogonal")
+  }*/
+  /*else if(perspectiveType == "orthogonal")
   {
     mat4.ortho(projectionMatrix,
                -orthoWidth/2,orthoWidth/2, //Left Right
                -orthoHeight/2,orthoHeight/2, //Top Bottom
                zNear,
                zFar);
-  }
+  }*/
 
-  // Set the drawing position to the "identity" point, which is
-  // the center of the scene.
-  const modelViewMatrix = mat4.create();
-  
-  /*mat4.translate(modelViewMatrix,     // destination matrix
-                 modelViewMatrix,     // matrix to translate
-                 [0,0,-10]);  // amount to */
   
   drawControlPoint(gl, shadersInfo, shapeData);
 
- 
   gl.useProgram(shadersInfo.GLSLprogram);
 
   gl.uniformMatrix4fv(
       shadersInfo.uniformLocations.projectionMatrix,
       false,
-      projectionMatrix);
+      ui.projection);
   gl.uniformMatrix4fv(
       shadersInfo.uniformLocations.modelViewMatrix,
       false,
-      modelViewMatrix);
+      ui.modelview);
 
 
   timeParameter += deltaTime;
@@ -534,7 +402,7 @@ function initLinesBuffers(gl, lineData ) {
   };
 }
 
-//Draw and set shader uniforms
+//6: Draw and set shader uniforms
 function drawControlPoint(gl, shadersInfo, lineData)
 {
   //@requires ProgramInfo de los shaders...
@@ -604,47 +472,175 @@ function generateFragmentShader()
 }
 
 
-function getRectangleVertices(p1x,p1y,p1z,p2x,p2y,p2z)
-{
- 
-  //Si lo hace con un array? //TODO
-  var ver = [];
-  
-  ver = ver.concat(p1x,p1y,p1z);
-  
-  ver = ver.concat(p2x,p1y,p1z);
-  
-  ver = ver.concat(p1x,p2y,p1z);
-  
-  ver = ver.concat(p2x,p2y,p2z);
-  
-  return ver;
-  
-}
-
 function getCubeVertices(p1x, p1y, p1z,
                               p2x, p2y, p2z,
                               /*p3x, p3y,*/ p3z)
 {
- 
   var ver = [];
   
   ver = ver.concat(p1x,p1y,p1z);
-  
   ver = ver.concat(p2x,p1y,p1z);
-  
   ver = ver.concat(p1x,p2y,p1z);
-  
   ver = ver.concat(p2x,p2y,p2z);
-  
   ver = ver.concat(p1x,p1y,p3z);
-  
   ver = ver.concat(p2x,p1y,p3z);
-  
   ver = ver.concat(p1x,p2y,p3z);
-  
   ver = ver.concat(p2x,p2y,p3z);
   
   return ver;
-  
 }
+
+//7:
+// De {-1, 1} x {-1, 1}
+function canvasMouseNormalizedPos(event) {
+  var xOffset = 0.028; 
+      
+  var x = 2*event.clientX/gl.canvas.width-1 -xOffset;
+  var y = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
+  //console.log(x, y);
+      
+  return {
+    x: x,
+    y: y,
+  }
+}
+
+// 3:
+function elementPos(element) {
+  var x = 0, y = 0;
+  while(element.offsetParent) {
+    x += element.offsetLeft;
+    y += element.offsetTop;
+    element = element.offsetParent;
+  }
+  return { x: x, y: y };
+}
+
+/** drmayor
+* retorna la posicion del clic dentro del canvas
+* 5:
+**/
+function canvasMousePos(event) {
+  
+  //mouse location en el html template
+  var mousePosx = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+                                                              //ok si, scroll necesario
+  var mousePosy =  event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+  
+  var canvasPos = elementPos(canvas);
+  
+  var x= mousePosx - canvasPos.x;
+  var y= mousePosy - canvasPos.y;
+  
+  //console.log(x, y);
+  return {
+    x: x,
+    y: y,
+  };
+  //@dep 3; 4
+}
+
+/** drmayor
+*  Actualización de cada frame (no linealmente sino desde la última actualización)
+*  0:      Actualiza (y determina) la ubicación de la cámara (eye)
+**/
+function tick(timeSinceStart) {
+  var rad = 5;
+  eye[0] = rad * zoomZ * Math.sin(angleY) * Math.cos(angleX);
+  eye[1] = rad * zoomZ * Math.sin(angleX);
+  eye[2] = rad * zoomZ * Math.cos(angleY) * Math.cos(angleX);  
+
+  ui.update(timeSinceStart);
+  //ui.render();
+  
+  //UI7, (R4), UI3, 
+}
+
+// ------- UI --------------------------------------
+
+// Clase del Path tracing - https://github.com/evanw/webgl-path-tracing
+
+//UI1:
+function UI() {
+  //this.renderer = new Renderer();
+  this.moving = false;
+  this.modelview = mat4.create();
+  this.projection = mat4.create();
+  this.modelViewProjection =  mat4.create();
+}
+
+//UI3: !!! Actualiza la camara!!!!!
+UI.prototype.update = function(timeSinceStart) {
+  mat4.lookAt(this.modelview, 
+                vec3.fromValues(eye[0], eye[1], eye[2]), 
+                vec3.fromValues(ctr[0], ctr[1], ctr[2]) , 
+                vec3.fromValues(0, 1, 0));
+  mat4.perspective(this.projection, FOV, gl.canvas.clientWidth / gl.canvas.clientHeight, zNear, zFar);
+  mat4.multiply(this.modelViewProjection, this.projection, this.modelview);
+  //  this.renderer.update(this.modelviewProjection, timeSinceStart);
+  //@dep R3
+};
+
+//6: 
+var mouseDown = false, oldX, oldY;
+
+
+//TODO para diferenciar entre 2nd, 3rd o move camra
+document.onmousedown = function(event) {
+  var mouse = canvasMousePos(event);
+  oldX = mouse.x;
+  oldY = mouse.y;
+  //   if(mouse.x >=  0 && mouse.x < 512 && mouse.y >= 0 && mouse.y < 512) {
+  //     console.log("BUUUU");
+  mouseDown = true; //!ui.mouseDown(mouse.x, mouse.y);
+  //     // disable selection because dragging is used for rotating the camera and moving objects
+  //     return false;
+  //   }
+
+  return true;
+
+  //@dep 5, ui4
+};
+
+/** drmayor
+* 7:
+**/
+document.onmousemove = function(event) {
+  var mouse = canvasMousePos(event);
+
+  ///console.log("angles " + angleX, angleY);
+  if(mouseDown) {
+    // update the angles based on how far we moved since last time
+    //console.log("angles " + angleX, angleY);
+    angleY -= (mouse.x - oldX) *0.01 ;
+    angleX += (mouse.y - oldY) *0.01;
+    
+    // no verlo de cabeza
+    angleX = Math.max(angleX, -Math.PI / 2 + 0.01);
+    angleX = Math.min(angleX, Math.PI / 2 - 0.01);
+    
+    oldX = mouse.x;
+    oldY = mouse.y;
+  } 
+  
+  //@dep 3, 5, UI5
+};
+
+/** drmayor
+* Al soltar el clic, dejar quieta la camara
+* 8:
+**/
+document.onmouseup = function(event) {
+  mouseDown = false;
+
+  var mouse = canvasMousePos(event);
+  ui.mouseUp(mouse.x, mouse.y);
+    //@dep 5, UI6
+}
+  
+
+
+
+
+
+
