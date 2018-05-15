@@ -1,0 +1,20 @@
+#overlayRB {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    background: #ffffffaa;
+}
+
+#overlayLB {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    background: #ffffffaa;
+}
+
+#overlayRT {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: #ffffffaa;
+}

@@ -1,0 +1,24 @@
+
+<head> 
+<script src="https://rawgit.com/mdn/webgl-examples/gh-pages/tutorial/gl-matrix.js"></script>
+<script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>        
+  <div id="overlayRT">
+  <input type="radio" name="camera_perspective" value="perspective"  checked > Perspective   <br>
+  <input type="radio" name="camera_perspective" value="orthogonal" > Orthogonal <br>
+  </div>
+
+  <div id="overlayRB">
+  <input type="radio" name="order_clic" value="2ndClic"  checked > Click 2D Vertex   <br>
+  <input type="radio" name="order_clic" value="3rdClic" > Drag 3D Vertex <br>
+  </div>
+
+<canvas id="glcanvas" width="512" height="512"></canvas>
+
+
+
+<script type='text/javascript' src="./mesh-deformable.js"></script>
+</body>

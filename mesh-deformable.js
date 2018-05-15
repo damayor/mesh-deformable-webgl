@@ -9,17 +9,43 @@ const  TRIANGLES      = 0x0004;
 const  TRIANGLE_STRIP = 0x0005;
 const  TRIANGLE_FAN   = 0x0006;
 
+var perspectiveType = "perspective";
+var clic = "3rd";
+
 var t = 0;
 var xClick =0;
 var yClick =0;
 var isDrawing = false;
 
+
+var orthoWidth = 5, orthoHeight = 5;
+const FOV = 60 * Math.PI / 180;   // in radians
+
 var mouseX, mouseY;
+
+const threePointsDraw = {
+  vertices: 
+  [
+    1.0,  1.0,   -22.0, 
+    3.0,  -2.5,  -22.0,
+    3.0,  -2.5,  -15.0, 
+  ],
+  colors: [
+    1.0,  0.0,  1.0,  1.0,
+    0.0,  1.0,  1.0,  1.0,
+    0.0,  1.0,  0.0,  1.0,
+  ],
+  indices: [    
+    0,  1,  2,                 
+  ],
+  indexCount: 3,
+  primitiveType: POINTS ,
+}
 
 const twoPointsDraw = {
   vertices: 
   [
-    0.0,  0.2,  -22.0, 
+    0.0,  0.0,  -22.0, 
     0.5,  -0.5,  -22.0, 
   ],
   colors: [
@@ -33,6 +59,7 @@ const twoPointsDraw = {
   primitiveType: POINTS ,
 }
 
+//check the 4 vertices of a rectangle
 const rectangleVerticesDraw = {
   vertices: getRectangleVertices( twoPointsDraw.vertices[0],twoPointsDraw.vertices[1],twoPointsDraw.vertices[2],
                                  twoPointsDraw.vertices[3],twoPointsDraw.vertices[4],twoPointsDraw.vertices[5],), 
@@ -41,6 +68,7 @@ const rectangleVerticesDraw = {
     0.0,  1.0,  1.0,  1.0,
     1.0,  1.0,  1.0,  1.0,
     1.0,  1.0,  0.0,  1.0,
+    
   ],
   indices: [    
     0,  1,  2,  3               
@@ -50,9 +78,11 @@ const rectangleVerticesDraw = {
   
 }
 
+// Draw the rectangle
 const rectangleLinesDraw = {
-  vertices: getRectangleVertices( twoPointsDraw.vertices[0],twoPointsDraw.vertices[1],twoPointsDraw.vertices[2],
-                                 twoPointsDraw.vertices[3],twoPointsDraw.vertices[4],twoPointsDraw.vertices[5],), 
+  vertices: getRectangleVertices( threePointsDraw.vertices[0],threePointsDraw.vertices[1],threePointsDraw.vertices[2],
+                                 threePointsDraw.vertices[3],threePointsDraw.vertices[4],threePointsDraw.vertices[5],
+                               ), 
   colors: [
     1.0,  0.0,  1.0,  1.0,
     0.0,  1.0,  1.0,  1.0,
@@ -65,6 +95,53 @@ const rectangleLinesDraw = {
   indexCount: 4,
   primitiveType: LINE_LOOP ,
   
+}
+
+//check the eight vertices of a cube
+const cubePointsDraw = {
+  vertices: getCubeVertices( threePointsDraw.vertices[0],threePointsDraw.vertices[1],threePointsDraw.vertices[2],            threePointsDraw.vertices[3],threePointsDraw.vertices[4],threePointsDraw.vertices[5],
+   threePointsDraw.vertices[8],), 
+  colors: [
+    1.0,  0.0,  1.0,  1.0,
+    0.0,  1.0,  1.0,  1.0,
+    1.0,  1.0,  1.0,  1.0,
+    1.0,  1.0,  0.0,  1.0,
+    
+    1.0,  0.0,  0.0,  1.0,
+    0.0,  1.0,  0.0,  1.0,
+    1.0,  1.0,  1.0,  1.0,
+    0.0,  0.0,  1.0,  1.0,
+  ],
+  indices: [    
+    0,  1,  3,  2,  4, 5, 6, 7,            
+  ],
+  indexCount: 8,
+  primitiveType: POINTS, //LINE_LOOP ,
+}
+
+//draw the 12 lines of a cube
+const cubeLinesDraw = {
+  vertices: getCubeVertices( threePointsDraw.vertices[0],threePointsDraw.vertices[1],threePointsDraw.vertices[2],            threePointsDraw.vertices[3],threePointsDraw.vertices[4],threePointsDraw.vertices[5],
+   threePointsDraw.vertices[8],), 
+  colors: [
+    1.0,  0.0,  1.0,  1.0,
+    0.0,  1.0,  1.0,  1.0,
+    1.0,  1.0,  1.0,  1.0,
+    1.0,  1.0,  0.0,  1.0,
+    
+    1.0,  0.0,  0.0,  1.0,
+    0.0,  1.0,  0.0,  1.0,
+    1.0,  1.0,  1.0,  1.0,
+    0.0,  0.0,  1.0,  1.0,
+  ],
+  indices: [    
+    0,  1,  2,  3,     1, 3, 2, 0,
+    4,  5, 6, 7,       4, 6, 5, 7,    
+    0, 4, 1, 5,        2, 6, 3, 7,        
+  ],
+  indexCount: 24,
+  
+  primitiveType: LINES, //LINE_LOOP ,
 }
 
 
@@ -84,6 +161,19 @@ const pointDraw = {
   primitiveType: POINTS ,
 }
 
+$(document).ready(
+  
+  function()
+		{		$("input[name^=camera]").click(function ()  {	
+        //cameraType = $('input:radio[name=camera_view]:checked').val();
+        perspectiveType = $('input:radio[name=camera_perspective]:checked').val();
+        //figureSelected = $('input:radio[name=camera_figure]:checked').val();
+			  cosole.log( "-" + perspectiveType);			 
+			}   );
+		 }
+);
+
+
 main();
 
 //
@@ -92,30 +182,68 @@ main();
 function main() {
   const canvas = document.querySelector('#glcanvas');
   const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-
+  
+  // gl.canvas.addEventListener("mousedown", function mousePos (event)
+  //                            {
+  //   xMouse = 2*event.clientX/gl.canvas.width-1;
+  //   yMouse = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
+  // });  
+  
   // If we don't have a GL context, give up now
-  
-  
-  gl.canvas.addEventListener("mousemove", function mousePos (event)
-                             {
-    // isDrawing = true;
-    xMouse = 2*event.clientX/gl.canvas.width-1;
-    yMouse = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
-  });  
-
   if (!gl) {
     alert('Unable to initialize WebGL. Your browser or machine may not support it.');
     return;
   }
   
-   function setEndVertex (event)
+   function setCubeExtrudeVertex (event)
+      {
+       //TODO
+       /* isDrawing = true;
+        xClick2 = 2*event.clientX/gl.canvas.width-1;
+        yClick2 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
+        
+        console.log("drawing "+ xClick2 +";"+ yClick2);
+        
+        if(perspectiveType == "perspective" )
+        {
+          xClick2 = xClick2*(22/2.414); ///zShape/tan(FOV/2)
+          yClick2 = yClick2*(22/2.414);
+        }
+        
+        console.log("true pos "+ xClick2 +";"+ yClick2);
+
+        shapeDraw.vertices[3] = xClick2;
+        shapeDraw.vertices[4] = yClick1;
+
+        shapeDraw.vertices[6] = xClick1;
+        shapeDraw.vertices[7] = yClick2;
+
+        shapeDraw.vertices[9] = xClick2;
+        shapeDraw.vertices[10] = yClick2;    */
+      }
+  
+    function setEndVertex (event)
       {
        
         isDrawing = true;
         xClick2 = 2*event.clientX/gl.canvas.width-1;
         yClick2 = 2*(gl.canvas.height-event.clientY)/gl.canvas.height-1;
         
-        //console.log("drawing "+ xClick2 +";"+ yClick2);
+        console.log("drawing "+ xClick2 +";"+ yClick2);
+        
+        if(perspectiveType == "perspective" )
+        {
+          xClick2 = xClick2*(22*Math.tan(FOV/2)); ///zShape/tan(FOV/2)
+          yClick2 = yClick2*(22*Math.tan(FOV/2)); // /2.414
+        }
+        
+        else if(perspectiveType == "orthogonal" )
+        {
+          xClick2 = xClick2*orthoWidth/2;
+          yClick2 = yClick2*orthoHeight/2;
+        }
+        
+        console.log("true pos "+ xClick2 +";"+ yClick2);
 
         shapeDraw.vertices[3] = xClick2;
         shapeDraw.vertices[4] = yClick1;
@@ -125,8 +253,17 @@ function main() {
 
         shapeDraw.vertices[9] = xClick2;
         shapeDraw.vertices[10] = yClick2;    
+        
+        //Cube
+        shapeDraw.vertices[15] = xClick2;
+        shapeDraw.vertices[16] = yClick1;
+
+        shapeDraw.vertices[18] = xClick1;
+        shapeDraw.vertices[19] = yClick2;
+        
+        shapeDraw.vertices[21] = xClick2;
+        shapeDraw.vertices[22] = yClick2;    
       }
-  
 
   // Vertex shader program
 
@@ -178,10 +315,11 @@ function main() {
     const deltaTime = now - then;
     then = now;
 
-    shapeDraw = rectangleLinesDraw;  
+    shapeDraw = cubeLinesDraw;  //rectangleLinesDraw;  
     xClick1 = shapeDraw.vertices[0];
     yClick1 = shapeDraw.vertices[1];
 
+    
     if(isDrawing)   
     {
       gl.canvas.addEventListener("mousemove", setEndVertex);  
@@ -205,7 +343,7 @@ function main() {
       gl.canvas.removeEventListener("mousemove", setEndVertex);   
     });  
 
-    drawScene(gl, shadersInfo, deltaTime, rectangleLinesDraw);
+    drawScene(gl, shadersInfo, deltaTime, shapeDraw);
 
     requestAnimationFrame(render);
   }
@@ -220,12 +358,13 @@ function drawScene(gl, shadersInfo, deltaTime, shapeData) {
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
   gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
+  
 
   // Clear the canvas before we start drawing on it.
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  const fieldOfView = 45 * Math.PI / 180;   // in radians
+  
   const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
   const zNear = 0.1;
   const zFar = 100.0;
@@ -241,13 +380,22 @@ function drawScene(gl, shadersInfo, deltaTime, shapeData) {
       //TODO en el bus             
   */
       
-  
-  mat4.ortho(projectionMatrix,
-                 -1,1, //Left Right
-                 -1,1, //Top Bottom
-                 zNear,
-                 zFar);
-  
+  if(perspectiveType == "perspective")
+  {
+    mat4.perspective(projectionMatrix,
+                     FOV,
+                     aspect,
+                     zNear,
+                     zFar);
+  }
+  else if(perspectiveType == "orthogonal")
+  {
+    mat4.ortho(projectionMatrix,
+               -orthoWidth/2,orthoWidth/2, //Left Right
+               -orthoHeight/2,orthoHeight/2, //Top Bottom
+               zNear,
+               zFar);
+  }
 
   // Set the drawing position to the "identity" point, which is
   // the center of the scene.
@@ -414,7 +562,8 @@ function generateFragmentShader()
 
 function getRectangleVertices(p1x,p1y,p1z,p2x,p2y,p2z)
 {
-  
+ 
+  //Si lo hace con un array? //TODO
   var ver = [];
   
   ver = ver.concat(p1x,p1y,p1z);
@@ -424,6 +573,33 @@ function getRectangleVertices(p1x,p1y,p1z,p2x,p2y,p2z)
   ver = ver.concat(p1x,p2y,p1z);
   
   ver = ver.concat(p2x,p2y,p2z);
+  
+  return ver;
+  
+}
+
+function getCubeVertices(p1x, p1y, p1z,
+                              p2x, p2y, p2z,
+                              /*p3x, p3y,*/ p3z)
+{
+ 
+  var ver = [];
+  
+  ver = ver.concat(p1x,p1y,p1z);
+  
+  ver = ver.concat(p2x,p1y,p1z);
+  
+  ver = ver.concat(p1x,p2y,p1z);
+  
+  ver = ver.concat(p2x,p2y,p2z);
+  
+  ver = ver.concat(p1x,p1y,p3z);
+  
+  ver = ver.concat(p2x,p1y,p3z);
+  
+  ver = ver.concat(p1x,p2y,p3z);
+  
+  ver = ver.concat(p2x,p2y,p3z);
   
   return ver;
   
