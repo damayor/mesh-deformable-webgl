@@ -1,7 +1,9 @@
 var ui;
 var gl ;
+var zFace1 = -10.0;
+var zFace2 = -5.0;
 var eye = vec3.fromValues(0,0,0);
-var ctr = vec3.fromValues(0.0, 0.0, -10.0);
+var ctr = vec3.fromValues(0.0, 0.0, zFace1);
 var angleX = 0;
 var angleY = 0;
 var zoomZ = 2.5;
@@ -20,7 +22,7 @@ const  TRIANGLE_STRIP = 0x0005;
 const  TRIANGLE_FAN   = 0x0006;
 
 var perspectiveType = "perspective";
-var clicTool = "cameraClic";//"2ndClic";  //3rdVertex
+var clicTool = "2ndClic";//"cameraClic";//"2ndClic";  //3rdVertex
 
 var t = 0;
 var xClick =0;
@@ -35,13 +37,14 @@ const zNear = 0.1;
 const zFar = 100.0;
 
 var mouseX, mouseY;
+var shapeDraw;
 
 const threePointsDraw = {
   vertices: 
   [
-    1.0,  1.0,   -10.0, 
-    3.0,  -2.5,  -10.0,
-    3.0,  -2.5,  -5.0, 
+    1.0,  1.0,   zFace1, 
+    3.0,  -2.5,  zFace1,
+    3.0,  -2.5,  zFace2, 
   ],
   colors: [
     1.0,  0.0,  1.0,  1.0,
@@ -113,63 +116,7 @@ function main() {
     alert('Unable to initialize WebGL. Your browser or machine may not support it.');
     return;
   }
-  
-   
-  // 2nd clic
-    function setEndVertex (event)
-      {
-       
-        isDrawing = true;
-        
-        
-        xClick2 = canvasMouseNormalizedPos( event).x ;
-        yClick2 = canvasMouseNormalizedPos( event).y ; 
-        
-        //console.log("drawing "+ xClick2 +";"+ yClick2);
-        
-       // if(perspectiveType == "perspective" )
-        {
-          xClick2 = xClick2*(22*Math.tan(FOV/2)); ///zShape/tan(FOV/2)
-          yClick2 = yClick2*(22*Math.tan(FOV/2)); // /2.414
-        }
-        
-        
-        //console.log("true pos "+ xClick2 +";"+ yClick2);
 
-        shapeDraw.vertices[3] = xClick2;
-        shapeDraw.vertices[4] = yClick1;
-
-        shapeDraw.vertices[6] = xClick1;
-        shapeDraw.vertices[7] = yClick2;
-
-        shapeDraw.vertices[9] = xClick2;
-        shapeDraw.vertices[10] = yClick2;    
-        
-        //Cube
-        shapeDraw.vertices[15] = xClick2;
-        shapeDraw.vertices[16] = yClick1;
-
-        shapeDraw.vertices[18] = xClick1;
-        shapeDraw.vertices[19] = yClick2;
-        
-        shapeDraw.vertices[21] = xClick2;
-        shapeDraw.vertices[22] = yClick2;    
-      }
-  
-  
-  function set3rdVertex (event)
-               
-  {
-        isDrawing = true;
-        xClick = canvasMouseNormalizedPos( event).x ;
-        yClick = canvasMouseNormalizedPos( event).y ; 
-        
-        shapeDraw.vertices[14] -= yClick*zDragFactor;
-        shapeDraw.vertices[17] -=  yClick*zDragFactor;
-        shapeDraw.vertices[20] -=  yClick*zDragFactor;
-        shapeDraw.vertices[23] -=  yClick*zDragFactor;       
-        
-      }
 
   // Vertex shader program
 
@@ -225,8 +172,7 @@ function main() {
     shapeDraw = cubeLinesDraw;  //rectangleLinesDraw;  
     xClick1 = shapeDraw.vertices[0];
     yClick1 = shapeDraw.vertices[1];
-    
-    var actualZ = shapeDraw.vertices[23];
+        
     
    if(clicTool == "1stClic")
    {
@@ -546,7 +492,7 @@ function canvasMousePos(event) {
 **/
 function tick(timeSinceStart) {
   var rad = 5;
-  eye[0] = rad * zoomZ * Math.sin(angleY) * Math.cos(angleX);
+  eye[0] =  rad * zoomZ * Math.sin(angleY) * Math.cos(angleX);
   eye[1] = rad * zoomZ * Math.sin(angleX);
   eye[2] = rad * zoomZ * Math.cos(angleY) * Math.cos(angleX);  
 
@@ -593,6 +539,7 @@ var mouseDown = false, oldX, oldY;
 //TODO para diferenciar entre 2nd, 3rd o move camra
 document.onmousedown = function(event) {
   var mouse = canvasMousePos(event);
+  var mouseNorm = canvasMouseNormalizedPos(event);
   oldX = mouse.x;
   oldY = mouse.y;
   //   if(mouse.x >=  0 && mouse.x < 512 && mouse.y >= 0 && mouse.y < 512) {
@@ -601,6 +548,11 @@ document.onmousedown = function(event) {
     {
     mouseDown = true; //!ui.mouseDown(mouse.x, mouse.y);
     }
+  else
+    {
+      ui.mouseDown(mouseNorm.x, mouseNorm.y);
+    }
+    
   //     // disable selection because dragging is used for rotating the camera and moving objects
   //     return false;
   //   }
@@ -630,6 +582,12 @@ document.onmousemove = function(event) {
     oldX = mouse.x;
     oldY = mouse.y;
   } 
+ /* else {
+    //var canvasPos = elementPos(canvas);
+    var mouseNorm = canvasMouseNormalizedPos(event);
+    ui.mouseMove(mouseNorm.x, mouseNorm.y);
+  }*/
+  
   
   //@dep 3, 5, UI5
 };
@@ -646,9 +604,122 @@ document.onmouseup = function(event) {
     //@dep 5, UI6
 }
   
+//Eyeray to clic pos vector in 3D world
+//U1:
+function getEyeRay(invMVP, x, y) {
+  
+  var rayMatrix = mat4.create();
+  rayMatrix[0] = x;   rayMatrix[1] = y;  rayMatrix[2] = 0;  rayMatrix[3] = 1;  
+  mat4.multiply(invMVP, invMVP, rayMatrix);  
+  
+  //solo queremos el vector
+  var eyeRay = vec4.fromValues(invMVP[0],invMVP[1], invMVP[2], invMVP[3]);
+  
+  eyeRay  = divideByW(eyeRay);  
+  var v3 = vec3.create();
+  
+  vec3.subtract( v3, vec3.fromValues(eyeRay[0], eyeRay[1], eyeRay[2]),  eye);
+  
+  return v3;
+  
+  //@dep V1,V3
+}
 
 
+function divideByW( vec ) {
+  var w = vec [vec.length - 1];
+  return vec4.fromValues(vec[0]/w, vec[1]/w, vec[2]/w, vec[3]/w);
+}
+
+/** drmayor
+* UI4: Intersección del rayo de clic con un objeto del canvas
+**/
+UI.prototype.mouseDown = function(x, y) {
+  var t ;
+  var origin = eye;
+  var invMVP = mat4.create();
+  mat4.invert(invMVP,this.modelViewProjection);
+  var ray = getEyeRay(invMVP,  x , y ); 
+ 
+  //https://www.uv.mx/personal/aherrera/files/2014/05/09-Interseccion-de-una-Recta-y-un-Plano-en-3D.pdf
+  this.surfaceNormal = vec3.fromValues(0, 0, 1.0);  
+  this.surfaceConstraint = zFace1 ; //el plano Z 
+  
+  var denom = vec3.dot(this.surfaceNormal, ray);
+  t =  (this.surfaceConstraint - vec3.dot(this.surfaceNormal, origin)) / denom;
+ 
+  var hit = vec3.create();
+  vec3.scale(ray, ray, t);
+  vec3.add(hit, origin, ray);
+  
+  return hit;
+  
+};
 
 
+ function setEndVertex (event)
+  {
+   // isDrawing = true;
 
+    xClick2 = canvasMouseNormalizedPos( event).x ;
+    yClick2 = canvasMouseNormalizedPos( event).y ; 
+
+    //console.log("drawing "+ xClick2 +";"+ yClick2);
+
+     //if(perspectiveType == "perspective" )
+    {
+     //xClick2 = /*eye[0]*/ + xClick2*(- zFace1 *Math.tan(FOV/2)); ///zShape/tan(FOV/2)
+     //yClick2 = /*eye[1]*/ + yClick2*(- zFace1 *Math.tan(FOV/2)); // /2.414
+      
+     var pointHit = ui.mouseDown(xClick2, yClick2); 
+     xClick2 = pointHit[0]; ///zShape/tan(FOV/2)
+     yClick2 = pointHit[1];
+
+    }
+
+    console.log(xClick2, yClick2,); 
+    //console.log("true pos "+ xClick2 +";"+ yClick2);
+
+    shapeDraw.vertices[3] = xClick2;
+    shapeDraw.vertices[4] = yClick1;
+
+    shapeDraw.vertices[6] = xClick1;
+    shapeDraw.vertices[7] = yClick2;
+
+    shapeDraw.vertices[9] = xClick2;
+    shapeDraw.vertices[10] = yClick2;    
+
+    //Cube
+    shapeDraw.vertices[15] = xClick2;
+    shapeDraw.vertices[16] = yClick1;
+
+    shapeDraw.vertices[18] = xClick1;
+    shapeDraw.vertices[19] = yClick2;
+
+    shapeDraw.vertices[21] = xClick2;
+    shapeDraw.vertices[22] = yClick2;    
+  }
+
+  
+  function set3rdVertex (event)
+  {
+    isDrawing = true;
+        
+    xClick = canvasMouseNormalizedPos( event).x ;
+    yClick = canvasMouseNormalizedPos( event).y ; 
+    
+    var pointHit = ui.mouseDown(xClick, yClick); 
+    xClick2 = pointHit[0]; ///zShape/tan(FOV/2)
+    yClick2 = pointHit[1];
+
+    
+    shapeDraw.vertices[14] -= yClick*zDragFactor;
+    shapeDraw.vertices[17] -=  yClick*zDragFactor;
+    shapeDraw.vertices[20] -=  yClick*zDragFactor;
+    shapeDraw.vertices[23] -=  yClick*zDragFactor;       
+        
+    zFace2 = shapeDraw.vertices[23];
+    console.log("plano2 Z updated: "+ zFace2)
+
+  }
 
