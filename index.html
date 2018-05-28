@@ -1,4 +1,3 @@
-
 <head> 
 <script src="https://rawgit.com/mdn/webgl-examples/gh-pages/tutorial/gl-matrix.js"></script>
 <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
@@ -12,14 +11,21 @@
   <input type="radio" name="camera_perspective" value="orthogonal" > Orthogonal <br>
   </div>
 
-  <div id="overlayRB">
-  <input type="radio" name="order_clic" value="2ndClic" checked > Click 2D Vertex   <br>
-  <input type="radio" name="order_clic" value="3rdClic" > Drag 3D Vertex <br>
-    <input type="radio" name="order_clic" value="cameraClic"  > Drag camera <br>
+   <div id="overlayRB">
+    <input type="radio" name="order_clic" value="selectClic" > Move any vertex <br>
+    <input type="radio" name="order_clic" value="2ndClic"  checked> Deform Cube   <br>
+    <input type="radio" name="order_clic" value="3rdClic" > Extrude Z-Face <br>
+    <input type="radio" name="order_clic" value="cameraClic" > Drag camera <br>
+
+  </div>
+ <div id="overlayLB">
+  <input type="radio" name="primitives" value="points"  checked > Points   <br>
+  <input type="radio" name="primitives" value="edges" > Edges <br>
+  <input type="radio" name="primitives" value="faces" > Faces <br>
   </div>
 
-<canvas id="glcanvas" width="800" height="800"></canvas>
-
+<canvas id="glcanvas" width="512" height="512"></canvas>
+<input type="checkbox" id="pickImg" checked>Picking Img <br>
 
 
 <script type='text/javascript' src="./mesh-deformable.js"></script>

@@ -1,3 +1,7 @@
+body {
+    background-color: gray;
+}
+
 #overlayRB {
     position: absolute;
     right: 10px;
@@ -16,5 +20,12 @@
     position: absolute;
     right: 10px;
     top: 10px;
+    background: #ffffffaa;
+}
+
+#overlayRT2 {
+    position: absolute;
+    right: 10px;
+    top: 55px;
     background: #ffffffaa;
 }
