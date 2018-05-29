@@ -11,7 +11,7 @@ var zoomZ = 1.5;
 const canvas = document.querySelector('#glcanvas');
 var showPickImg = document.querySelector('#pickImg');
 const n = 10; 
-
+var offScreen = true;
 
 var timeParameter = 0.0;
 var rotYSpeed = 2;
@@ -231,7 +231,7 @@ function main() {
 
     void main(void) {
         if(uOffscreen){
-            gl_FragColor = vPickColor ; // vec4 (1,1,1,1); // uDiffuseColor; ////
+            gl_FragColor = vPickColor ;
             return;
         }
         
@@ -294,10 +294,11 @@ function main() {
     tick(now);
     
     gl.bindFramebuffer(gl.FRAMEBUFFER, pickBuffers.frameBuffer);
-    gl.uniform1i(shadersInfo.uniformLocations.uOffscreen, true);
+    offScreen = true;
+    gl.uniform1i(shadersInfo.uniformLocations.uOffscreen, offScreen);
     drawScene(gl, shadersInfo, deltaTime,  shapeDraw);
-    
-    gl.uniform1i(shadersInfo.uniformLocations.uOffscreen, showPickImg.checked); 
+    offScreen = showPickImg.checked;
+    gl.uniform1i(shadersInfo.uniformLocations.uOffscreen, offScreen); 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); //pinte pantalla normal
     drawScene(gl, shadersInfo, deltaTime, shapeDraw);
 
@@ -310,7 +311,7 @@ function main() {
 // Draw the scene.
 //
 function drawScene(gl, shadersInfo, deltaTime, shapeData) {
-  gl.clearColor(0.3, 0.3, 0.3, 1.0);  // Clear to black, fully opaque
+  gl.clearColor(0.5, 0.5, 0.5, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
   gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
@@ -380,7 +381,14 @@ function loadShader(gl, type, source) {
 }
 
 // 5: just initBuffers, receives data as @param
-function initLinesBuffers(gl, lineData ) {
+function initLinesBuffers(gl, lineData) {
+  
+  var indicesDrawn;
+  
+  if(!offScreen)
+    indicesDrawn = lineData.indices;
+  else
+    indicesDrawn = cubePointsDraw.indices;
 
   const verticesBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, verticesBuffer);     
@@ -397,7 +405,7 @@ function initLinesBuffers(gl, lineData ) {
   const indexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-      new Uint16Array(lineData.indices), gl.STATIC_DRAW);
+      new Uint16Array(indicesDrawn), gl.STATIC_DRAW);
 
   return {
     vertices: verticesBuffer,
@@ -471,15 +479,32 @@ function drawControlPoint(gl, shadersInfo, lineData)
   }
 
   // Tell WebGL which indices to use to index the vertices
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferLine.indices);
-    
-  {
-    const vertexCount = lineData.indexCount;
-    const type = gl.UNSIGNED_SHORT;
-    const offset = 0;
-    //@relevant El unico draw que habrá buajajaj
-    gl.drawElements(lineData.primitiveType, vertexCount, type, offset);
+ gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferLine.indices);
+
+  
+  if(!offScreen)
+  {  
+    {
+      var vertexCount = lineData.indexCount;
+      const type = gl.UNSIGNED_SHORT;
+      const offset = 0;
+      //@relevant El unico draw que habrá buajajaj
+      gl.drawElements(lineData.primitiveType, vertexCount, type, offset);
+    }
   }
+  else 
+  {
+    //pinte solo puntos seleccionables
+    {
+      var vertexCount = cubePointsDraw.indexCount;
+      const type = gl.UNSIGNED_SHORT;
+      const offset = 0;
+      //@relevant El unico draw que habrá buajajaj
+      gl.drawElements(cubePointsDraw.primitiveType, vertexCount, type, offset);
+    }
+    
+  }
+  
  
     //return modelViewMatrixLastStack;
 }
@@ -766,7 +791,7 @@ UI.prototype.mouseDown = function(x, y) {
   
 };
 
-// move point through everywehre
+//UI5: move plane in the same plane
 UI.prototype.eyeRayClicPlane = function(x, y) {
   
   var t ;
@@ -778,6 +803,32 @@ UI.prototype.eyeRayClicPlane = function(x, y) {
   //https://www.uv.mx/personal/aherrera/files/2014/05/09-Interseccion-de-una-Recta-y-un-Plano-en-3D.pdf
   this.surfaceNormal = vec3.fromValues(0, 0, 1.0);  
   this.surfaceConstraint = zFace2 ; //el plano Z 
+  
+  var denom = vec3.dot(this.surfaceNormal, ray);
+  t =  (this.surfaceConstraint - vec3.dot(this.surfaceNormal, origin)) / denom;
+ 
+  var hit = vec3.create();
+  vec3.scale(ray, ray, t);
+  vec3.add(hit, origin, ray);
+  
+  return hit;
+  
+};
+
+// UI6: move point through normal plane from eyeRay
+UI.prototype.eyeRayPickObj = function(x, y) {
+  
+  var t ;
+  var origin = eye;
+  var invMVP = mat4.create();
+  mat4.invert(invMVP,this.modelViewProjection);
+  var ray = getEyeRay(invMVP,  x , y ); 
+ 
+  var pick = picker.getPickPos();
+  var d = ray[0]*pick[0] + ray[1]*pick[1] + ray[2]*pick[2];
+  
+  this.surfaceNormal =  ray ; // el mismo ray para moverlo ortogonal a la vista;   
+  this.surfaceConstraint = d ; 
   
   var denom = vec3.dot(this.surfaceNormal, ray);
   t =  (this.surfaceConstraint - vec3.dot(this.surfaceNormal, origin)) / denom;
@@ -803,9 +854,10 @@ UI.prototype.eyeRayClicPlane = function(x, y) {
 
     if(perspectiveType == "perspective" )
     {
-      var pointHit = ui.eyeRayClicPlane(xClick2, yClick2); 
+      var pointHit = ui.eyeRayPickObj(xClick2, yClick2); 
       xClick2 = pointHit[0]; ///zShape/tan(FOV/2)
       yClick2 = pointHit[1];
+      zClick2 = pointHit[2];
     }
     else if(perspectiveType == "orthogonal" ) //funciona pero no tanto
     {
@@ -820,6 +872,7 @@ UI.prototype.eyeRayClicPlane = function(x, y) {
 
     shapeDraw.vertices[vertexI] = xClick2;
     shapeDraw.vertices[vertexI+1] = yClick2;    
+    shapeDraw.vertices[vertexI+2] = zClick2;
   }
 
   
@@ -978,6 +1031,7 @@ function Picker() {
     this.texture = null;
     this.framebuffer = null;
     this.renderbuffer = null;
+    this.pickPos = vec3.create();
     
    // this.configure();
  // initFrameBuffer(gl, this);
@@ -989,39 +1043,36 @@ function Picker() {
 //P1:
 //var frametexture;
 var framebuffer;
-
+ var texture;
 function initFrameBuffer(gl)
 {
 
- var width = gl.canvas.clientWidth;
- var height = gl.canvas.clientHeight;
+  var width = gl.canvas.clientWidth;
+  var height = gl.canvas.clientHeight;
 
-// //1. Init Picking Texture
-  var texture = gl.createTexture();
+  // //1. Init Picking Texture
+  texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
   //si quiere comprobar que hay textura
-    var pixel = new Uint8Array([255, 0, 255, 255]); 
-   // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+  var pixel = new Uint8Array([255, 0, 255, 255]); 
+  // gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
-	//2. Init Render Buffer
-	var renderbuffer = gl.createRenderbuffer();
-    gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, gl.canvas.clientWidth, gl.canvas.clientHeight);
-	
-    
-    //3. Init Frame Buffer
-    framebuffer = gl.createFramebuffer();
-	  gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-	  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0); 
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
-	
+  //2. Init Render Buffer
+  var renderbuffer = gl.createRenderbuffer();
+  gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, gl.canvas.clientWidth, gl.canvas.clientHeight);
 
-	//4. Clean up
-	gl.bindTexture(gl.TEXTURE_2D, null);
-	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  
+  //3. Init Frame Buffer
+  framebuffer = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0); 
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
+  //4. Clean up
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
   return  {
     frameTexture: texture, 
     frameBuffer: framebuffer,
@@ -1103,6 +1154,19 @@ function deseleccionar()
   picker.objI = -1;
 }
 
+
+//P6:
+Picker.prototype.getPickPos =  function()
+{
+    var vertexI = 3*(this.objI -1) ;
+    var pickObjPos = vec3.fromValues( 
+        shapeDraw.vertices[vertexI],  shapeDraw.vertices[vertexI+1], shapeDraw.vertices[vertexI+2]) ;
+  console.log(shapeDraw.vertices[vertexI],  shapeDraw.vertices[vertexI+1], shapeDraw.vertices[vertexI+2]);
+  
+   return pickObjPos;
+  
+}
+
 /*
 function Point(location, pickColor, color, index)
 {
@@ -1118,9 +1182,12 @@ function Point(location, pickColor, color, index)
 }
 
 
+
 function Scene()
 {
   this.objs = [];
+  
+  
   
 }*/
 
