@@ -6,26 +6,33 @@
 </head>
 <body>        
 
-  <div id="overlayRT">
+   <div id="overlayRT">
   <input type="radio" name="camera_perspective" value="perspective"  checked > Perspective   <br>
   <input type="radio" name="camera_perspective" value="orthogonal" > Orthogonal <br>
   </div>
 
-   <div id="overlayRB">
+  <div id="overlayRB">
     <input type="radio" name="order_clic" value="selectClic" > Move any vertex <br>
     <input type="radio" name="order_clic" value="2ndClic"  checked> Deform Cube   <br>
     <input type="radio" name="order_clic" value="3rdClic" > Extrude Z-Face <br>
-    <input type="radio" name="order_clic" value="cameraClic" > Drag camera <br>
+    <!--input type="radio" name="order_clic" value="cameraClic" > Drag camera <br-->
 
   </div>
+
   <div id="overlayLB">
-  <input type="radio" name="primitives" value="points"  checked > Vertices   <br>
-  <input type="radio" name="primitives" value="edges" > Edges <br>
+  <input type="radio" name="primitives" value="points"  checked > Edges   <br>
+  <input type="radio" name="primitives" value="edges"  > Faces <br>
   <!--input type="radio" name="primitives" value="faces" > Faces <br-->
   </div>
 
 <canvas id="glcanvas" width="1600" height="800"></canvas>
-<input type="checkbox" id="pickImg" checked>Picking Img <br>
+<input  type="checkbox" id="pickImg" /*checked*/>Picking Render <br>
+
+<!--div id="overlayRT2">
+  <input type="range" min="0" max="10" value="1.5" class="slider" name="zoom">
+</div-->
+<div> zoom
+<input type="range" min="0" max="10" step="0.1" value="1.5" class="slider" id="zoom"></div>
 
 
 <script type='text/javascript' src="./mesh-deformable.js"></script>

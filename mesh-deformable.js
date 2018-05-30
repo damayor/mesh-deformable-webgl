@@ -3,13 +3,17 @@ var picker;
 var gl ;
 var zFace1 = -10.0;
 var zFace2 = -5.0;
-var eye = vec3.fromValues(0,0,0);
+var eye = vec3.fromValues(3,3,3);
 var ctr = vec3.fromValues(0.0, 0.0, zFace1);
-var angleX = 0;
-var angleY = 0;
+var angleX = Math.PI/6;
+var angleY = 0 ;//*Math.Pi/4;
 var zoomZ = 1.5;
 const canvas = document.querySelector('#glcanvas');
 var showPickImg = document.querySelector('#pickImg');
+var zoomSlider = document.querySelector('#zoom');
+
+
+
 const n = 10; 
 var offScreen = true;
 
@@ -70,12 +74,12 @@ const cubePointsDraw = {
   colors: [
     1.0,  0.0,  1.0,  1.0,
     0.0,  1.0,  1.0,  1.0,
+    0.5,  0.0,  1.0,  1.0,
     1.0,  1.0,  1.0,  1.0,
-    1.0,  1.0,  0.0,  1.0,
     
     1.0,  0.0,  0.0,  1.0,
     0.0,  1.0,  0.0,  1.0,
-    1.0,  1.0,  1.0,  1.0,
+    1.0,  1.0,  0.0,  1.0,
     0.0,  0.0,  1.0,  1.0,
   ],
     pickColors: [
@@ -98,17 +102,17 @@ const cubePointsDraw = {
 
 //draw the 12 lines of a cube
 const cubeLinesDraw = {
-  vertices: getCubeVertices( threePointsDraw.vertices[0],threePointsDraw.vertices[1],threePointsDraw.vertices[2],            threePointsDraw.vertices[3],threePointsDraw.vertices[4],threePointsDraw.vertices[5],
+  /*vertices: getCubeVertices( threePointsDraw.vertices[0],threePointsDraw.vertices[1],threePointsDraw.vertices[2],            threePointsDraw.vertices[3],threePointsDraw.vertices[4],threePointsDraw.vertices[5],
    threePointsDraw.vertices[8],), 
   colors: [
     1.0,  0.0,  1.0,  1.0,
     0.0,  1.0,  1.0,  1.0,
+    0.5,  0.0,  1.0,  1.0,
     1.0,  1.0,  1.0,  1.0,
-    1.0,  1.0,  0.0,  1.0,
     
     1.0,  0.0,  0.0,  1.0,
     0.0,  1.0,  0.0,  1.0,
-    1.0,  1.0,  1.0,  1.0,
+    1.0,  1.0,  0.0,  1.0,
     0.0,  0.0,  1.0,  1.0,
   ],
    pickColors: [
@@ -121,7 +125,7 @@ const cubeLinesDraw = {
       0.55,0.68,0.94,1.0,
       0.3, 0.26,0.42,1.0,
       0.66,0.46,0.81,1.0,
-  ],
+  ],*/
   
   indices: [    
     0,  1,  2,  3,     1, 3, 2, 0,
@@ -131,6 +135,63 @@ const cubeLinesDraw = {
   indexCount: 24,
   
   primitiveType: LINES, //LINE_LOOP ,
+}
+
+
+
+var Floor = {
+    alias       : 'floor',
+    wireframe   : true,
+    dim         : 50,
+    lines       : 50,
+    vertices    : [],
+    indices     : [],
+    colors     : [],
+  pickColors     : [],
+    diffuse : [0.7,0.7,0.7,1.0],
+    indexCount: 300,
+    primitiveType: LINES,
+    build : function(d,e){
+                    if (d) Floor.dim = d;
+                    if (e) Floor.lines = 2*Floor.dim/e;
+                    var inc = 2*Floor.dim/Floor.lines;
+                    var v = [];
+                    var i = [];
+                    var c = [];
+                    var dif = 0.7;
+
+                    for(var l=0;l<=Floor.lines;l++){
+                        v[6*l] = -Floor.dim; 
+                        v[6*l+1] = 0;
+                        v[6*l+2] = -Floor.dim+(l*inc);
+                        
+                        v[6*l+3] = Floor.dim;
+                        v[6*l+4] = 0;
+                        v[6*l+5] = -Floor.dim+(l*inc);
+                        
+                        v[6*(Floor.lines+1)+6*l] = -Floor.dim+(l*inc); 
+                        v[6*(Floor.lines+1)+6*l+1] = 0;
+                        v[6*(Floor.lines+1)+6*l+2] = -Floor.dim;
+                        
+                        v[6*(Floor.lines+1)+6*l+3] = -Floor.dim+(l*inc);
+                        v[6*(Floor.lines+1)+6*l+4] = 0;
+                        v[6*(Floor.lines+1)+6*l+5] = Floor.dim;
+                        
+                        i[2*l] = 2*l;
+                        i[2*l+1] = 2*l+1;
+                        i[2*(Floor.lines+1)+2*l] = 2*(Floor.lines+1)+2*l;
+                        i[2*(Floor.lines+1)+2*l+1] = 2*(Floor.lines+1)+2*l+1;        
+                      
+                        c= c.concat(dif,dif,dif,1.0) ;
+                        c= c.concat(dif,dif,dif,1.0) ;
+                        c= c.concat(dif,dif,dif,1.0) ;
+                        c= c.concat(dif,dif,dif,1.0) ;
+                    }
+                    Floor.vertices = v;
+                    Floor.indices = i;
+                    Floor.colors = c;
+      Floor.pickColors = c;
+              }
 }
 
 /*
@@ -217,7 +278,7 @@ function main() {
           gl_PointSize = 20.0;
       }
       else {
-        gl_PointSize = 5.0;
+        gl_PointSize = 7.0;
       }
     }
   `;
@@ -228,11 +289,17 @@ function main() {
 
     uniform bool uOffscreen;
     uniform highp vec4 uDiffuseColor;
+   uniform bool uWireframe;
+
 
     void main(void) {
         if(uOffscreen){
             gl_FragColor = vPickColor ;
             return;
+        }
+         if(uWireframe){
+              gl_FragColor = vec4(0.05,0.05,0.05,0.0);
+              return;
         }
         
       gl_FragColor = vColor;
@@ -259,12 +326,16 @@ function main() {
       modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
       uOffscreen: gl.getUniformLocation(shaderProgram, 'uOffscreen'),
       //uDiffuse: gl.getUniformLocation(shaderProgram, 'uDiffuseColor'),
+      uWireframe: gl.getUniformLocation(shaderProgram, 'uWireframe'),
+
     },
   };
 
   var then = 0;
   ui = new UI();
   picker = new Picker(); //debugaca
+    Floor.build(80,2);
+
   
 
   // Draw the scene repeatedly
@@ -289,6 +360,8 @@ function main() {
     /* document.onmousedown = function(event) {
         readPixel(event);
     }*/
+    
+ 
 
     //funcion que actualiza la posicion de la camara
     tick(now);
@@ -297,6 +370,7 @@ function main() {
     offScreen = true;
     gl.uniform1i(shadersInfo.uniformLocations.uOffscreen, offScreen);
     drawScene(gl, shadersInfo, deltaTime,  shapeDraw);
+    
     offScreen = showPickImg.checked;
     gl.uniform1i(shadersInfo.uniformLocations.uOffscreen, offScreen); 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); //pinte pantalla normal
@@ -311,7 +385,7 @@ function main() {
 // Draw the scene.
 //
 function drawScene(gl, shadersInfo, deltaTime, shapeData) {
-  gl.clearColor(0.5, 0.5, 0.5, 1.0);  // Clear to black, fully opaque
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
   gl.depthFunc(gl.LEQUAL);            // Near things obscure far things
@@ -381,37 +455,44 @@ function loadShader(gl, type, source) {
 }
 
 // 5: just initBuffers, receives data as @param
-function initLinesBuffers(gl, lineData) {
+function initLinesBuffers(gl, shapeData) {
   
   var indicesDrawn;
   
   if(!offScreen)
-    indicesDrawn = lineData.indices;
+    indicesDrawn = shapeData.indices;
   else
     indicesDrawn = cubePointsDraw.indices;
 
   const verticesBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, verticesBuffer);     
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lineData.vertices), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shapeData.vertices), gl.STATIC_DRAW);
 
   const colorBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lineData.colors), gl.STATIC_DRAW); 
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shapeData.colors), gl.STATIC_DRAW); 
   
     const pickColorBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, pickColorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lineData.pickColors), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shapeData.pickColors), gl.STATIC_DRAW);
 
   const indexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
       new Uint16Array(indicesDrawn), gl.STATIC_DRAW);
+  
+    const linesIndexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, linesIndexBuffer);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+      new Uint16Array( cubeLinesDraw.indices), gl.STATIC_DRAW);
+
 
   return {
     vertices: verticesBuffer,
     color: colorBuffer,
     indices: indexBuffer,
     pickcolors: pickColorBuffer,
+    linesIndices: linesIndexBuffer,
   };
 }
 
@@ -421,6 +502,12 @@ function drawControlPoint(gl, shadersInfo, lineData)
   //@requires ProgramInfo de los shaders...
   
   //Dicho lineData debe estar parametrizado con la interaccion del usuario
+  
+  
+    gl.uniform1i(
+      shadersInfo.uniformLocations.uWireframe,
+      lineData.wireframe);
+  
   
   var bufferLine = initLinesBuffers(gl, lineData );  
   {
@@ -478,35 +565,42 @@ function drawControlPoint(gl, shadersInfo, lineData)
         shadersInfo.attribLocations.vertexPickColor);
   }
 
+
   // Tell WebGL which indices to use to index the vertices
  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferLine.indices);
 
   
-  if(!offScreen)
   {  
     {
       var vertexCount = lineData.indexCount;
       const type = gl.UNSIGNED_SHORT;
       const offset = 0;
-      //@relevant El unico draw que habrá buajajaj
       gl.drawElements(lineData.primitiveType, vertexCount, type, offset);
     }
   }
-  else 
+  
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferLine.linesIndices);
+  
+ if(!offScreen)
   {
-    //pinte solo puntos seleccionables
     {
-      var vertexCount = cubePointsDraw.indexCount;
+      var vertexCount = cubeLinesDraw.indexCount;
       const type = gl.UNSIGNED_SHORT;
       const offset = 0;
-      //@relevant El unico draw que habrá buajajaj
-      gl.drawElements(cubePointsDraw.primitiveType, vertexCount, type, offset);
+      gl.drawElements(cubeLinesDraw.primitiveType, vertexCount, type, offset);
     }
     
   }
-  
  
-    //return modelViewMatrixLastStack;
+  
+  
+  /////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
+  /////////////////////Floor /////////////////////////
+  /////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
+  
+ drawFloor(shadersInfo);
 }
 
 
@@ -640,7 +734,6 @@ UI.prototype.update = function(timeSinceStart) {
 var mouseDown = false, oldX, oldY;
 var selectDown = false;
 
-
 //TODO para diferenciar entre 2nd, 3rd o move camra
 document.onmousedown = function(event) {
   var mouse = canvasMousePos(event);
@@ -648,8 +741,9 @@ document.onmousedown = function(event) {
   oldX = mouse.x;
   oldY = mouse.y;
   //   if(mouse.x >=  0 && mouse.x < 512 && mouse.y >= 0 && mouse.y < 512) {
-  //     console.log("BUUUU");
-  if(clicTool == "cameraClic")  //separa cualquier instruccin de mover camara, y lo hizo por coincidencia :P
+
+  if (event.which == 3)
+  //if(clicTool == "cameraClic")  //separa cualquier instruccin de mover camara, y lo hizo por coincidencia :P
   {
     mouseDown = true; //!ui.mouseDown(mouse.x, mouse.y);
   }
@@ -673,14 +767,13 @@ document.onmousedown = function(event) {
   //@dep 5, ui4
 };
 
-/** drmayor
+/** drmayor 
 * 7:
 **/
 document.onmousemove = function(event) {
   var mouse = canvasMousePos(event);
   
 
-  ///console.log("angles " + angleX, angleY);
   if(mouseDown) {
     // update the angles based on how far we moved since last time
     //console.log("angles " + angleX, angleY);
@@ -729,7 +822,6 @@ document.onmouseup = function(event) {
   {
     gl.canvas.removeEventListener("mousemove", set3rdVertex);   
   } 
-  console.log("nada selected");
   deseleccionar();
 
 
@@ -841,6 +933,13 @@ UI.prototype.eyeRayPickObj = function(x, y) {
   
 };
 
+//UI7: modifyZoom
+zoomSlider.oninput = function() {
+  zoomZ = this.value;
+  zoomSlider.nodeValue = this.value;
+  console.log(zoomZ);
+};
+
 
 
  function movePickVertex (event)
@@ -894,7 +993,6 @@ UI.prototype.eyeRayPickObj = function(x, y) {
     shapeDraw.vertices[23] -=  yClick*zDragFactor;       
         
     zFace2 = shapeDraw.vertices[23];
-    console.log("plano2 Z updated: "+ zFace2)
 
   }
 
@@ -941,88 +1039,6 @@ function setEndVertex (event)
     shapeDraw.vertices[21] = xClick2;
     shapeDraw.vertices[22] = yClick2;    
   }
-
-
-function drawFigure(gl, programInfo,  modelViewMatrixLastStack, translation, figureData, texture)
-{
-  
-  var figModelViewMatrix2 = mat4.create();
-  
-    //var modelViewMatrix = mat4.create();
-  mat4.translate(figModelViewMatrix2,     // destination matrix
-                 modelViewMatrixLastStack,     // matrix to translate
-                 /*figureData.translation*/
-                  translation); //[4.0, 1.0, -5.0]);  // amount to translate = translate
-  
-  gl.uniformMatrix4fv(
-      programInfo.uniformLocations.modelViewMatrix,
-      false,
-      figModelViewMatrix2);
-  
-  
-  var buffers = initBuffers(gl, figureData.data);
-  
-    {
-    const numComponents = 3;
-    const type = gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-    gl.vertexAttribPointer(
-        programInfo.attribLocations.vertexPosition,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-    gl.enableVertexAttribArray(
-        programInfo.attribLocations.vertexPosition);
-  }
-  
-  // tell webgl how to pull out the texture coordinates from buffer
-{
-    const num = 2; // every coordinate composed of 2 values
-    const type = gl.FLOAT; // the data in the buffer is 32 bit float
-    const normalize = false; // don't normalize
-    const stride = 0; // how many bytes to get from one set to the next
-    const offset = 0; // how many bytes inside the buffer to start from
-  
-  //une el arreglo
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureCoords);
-  //con el shader
-    gl.vertexAttribPointer(programInfo.attribLocations.textureCoord, num, type, normalize, stride, offset);
-    gl.enableVertexAttribArray(programInfo.attribLocations.textureCoord);
-}
-
-
-   // Tell WebGL we want to affect texture unit 0
-  gl.activeTexture(gl.TEXTURE0);
-  // Bind the texture to texture unit 0
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  // Tell the shader we bound the texture to texture unit 0
-  gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
-  // Tell WebGL which indices to use to index the vertices
-  
-  
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-
-  
-  //var indexCount = gl.getBufferParameter(gl.ELEMENT_ARRAY_BUFFER, gl.BUFFER_SIZE);
-
-  {
-    const vertexCount = figureData.indexCount;
-    const type = gl.UNSIGNED_SHORT;
-    const offset = 0;
-    gl.drawElements(figureData.primitiveType, vertexCount, type, offset);
-  }
-  
-  
-
-    return figModelViewMatrix2;
-  
-}
-
 
 //Picker Class
 //P0
@@ -1091,7 +1107,7 @@ function readPixel(event)
   var readout = new Uint8Array(1 * 1 * 4);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
 	gl.readPixels(event.clientX,gl.canvas.height-event.clientY,1,1,gl.RGBA,gl.UNSIGNED_BYTE,readout); 
-  console.log(""+readout);
+  //console.log(""+readout);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   
   return readout;
@@ -1136,7 +1152,6 @@ function findPicked(event)
   
   if( picker.objI == -1)
   {//si no encontro ninguno deseleccione
-  //console.log("no encontro ninguno, descoloreo");
   cubePointsDraw.pickColors[4*picker.objI-1] = 1.0;
   cubePointsDraw.colors[4*picker.objI-1] = 1.0;
 
@@ -1148,7 +1163,7 @@ function findPicked(event)
 //P5:
 function deseleccionar()
 {
-  console.log("no encontro ninguno, descoloreo");
+  //console.log("no encontro ninguno, descoloreo");
   cubePointsDraw.pickColors[4*picker.objI-1] = 1.0;
   cubePointsDraw.colors[4*picker.objI-1] = 1.0;
   picker.objI = -1;
@@ -1161,7 +1176,7 @@ Picker.prototype.getPickPos =  function()
     var vertexI = 3*(this.objI -1) ;
     var pickObjPos = vec3.fromValues( 
         shapeDraw.vertices[vertexI],  shapeDraw.vertices[vertexI+1], shapeDraw.vertices[vertexI+2]) ;
-  console.log(shapeDraw.vertices[vertexI],  shapeDraw.vertices[vertexI+1], shapeDraw.vertices[vertexI+2]);
+  //console.log(shapeDraw.vertices[vertexI],  shapeDraw.vertices[vertexI+1], shapeDraw.vertices[vertexI+2]);
   
    return pickObjPos;
   
@@ -1191,4 +1206,77 @@ function Scene()
   
 }*/
 
+// Util 1: pintar piso
+function drawFloor(shadersInfo)
+{
 
+  gl.uniform1i(
+    shadersInfo.uniformLocations.uWireframe,
+    Floor.wireframe);
+
+  var bufferFloor = initLinesBuffers(gl, Floor );  
+  {
+    const numComponents = 3;
+    const type = gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferFloor.vertices);
+    gl.vertexAttribPointer(
+      shadersInfo.attribLocations.vertexPosition,
+      numComponents,
+      type,
+      normalize,
+      stride,
+      offset);
+    gl.enableVertexAttribArray(
+      shadersInfo.attribLocations.vertexPosition);
+  }
+  // into the vertexColor attribute.
+  //if(!lineData.wireframe)     //fll
+  {
+    const numComponents = 4;
+    const type = gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferFloor.color);
+    gl.vertexAttribPointer(
+      shadersInfo.attribLocations.vertexColor,
+      numComponents,
+      type,
+      normalize,
+      stride,
+      offset);
+    gl.enableVertexAttribArray(
+      shadersInfo.attribLocations.vertexColor);
+  }
+
+  {
+    const numComponents = 4;
+    const type = gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferFloor.pickcolors);
+    gl.vertexAttribPointer(
+      shadersInfo.attribLocations.vertexPickColor,
+      numComponents,
+      type,
+      normalize,
+      stride,
+      offset);
+    gl.enableVertexAttribArray(
+      shadersInfo.attribLocations.vertexPickColor);
+  }
+
+  // Tell WebGL which indices to use to index the vertices
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferFloor.indices);
+
+  {
+    const vertexCount = Floor.indexCount; //50 ;//lineData.indexCount; //250-320 //fll
+    const type = gl.UNSIGNED_SHORT;
+    const offset = 0;
+    gl.drawElements(Floor.primitiveType, vertexCount, type, offset);
+  }
+}
