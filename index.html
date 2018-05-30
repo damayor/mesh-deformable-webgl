@@ -6,34 +6,46 @@
 </head>
 <body>        
 
-   <div id="overlayRT">
+<div id="UIPanel">
+
+  <div class="color" id="overlayCamera">
+    <center class="color"> <b>Tipo de proyeccion</b></center>  
   <input type="radio" name="camera_perspective" value="perspective"  checked > Perspective   <br>
-  <input type="radio" name="camera_perspective" value="orthogonal" > Orthogonal <br>
+  <input type="radio" name="camera_perspective" value="orthogonal" > Ortogonal <br>
   </div>
 
-  <div id="overlayRB">
-    <input type="radio" name="order_clic" value="selectClic" > Move any vertex <br>
-    <input type="radio" name="order_clic" value="2ndClic"  checked> Deform Cube   <br>
-    <input type="radio" name="order_clic" value="3rdClic" > Extrude Z-Face <br>
+  <div class="color" id="overlayMode">
+   <center><b>Modo de interacción</b></center>
+    <input type="radio" name="order_clic" value="selectClic" > Moveer vertice <br>
+    <input type="radio" name="order_clic" value="2ndClic"  checked> Deformar Cube   <br>
+    <input type="radio" name="order_clic" value="3rdClic" > Extruir en Z <br>
     <!--input type="radio" name="order_clic" value="cameraClic" > Drag camera <br-->
 
   </div>
-
-  <div id="overlayLB">
-  <input type="radio" name="primitives" value="points"  checked > Edges   <br>
-  <input type="radio" name="primitives" value="edges"  > Faces <br>
+<br>
+  <div class="color" id="overlayPrimitives"><center> <b>Vista</b> </center> 
+  <input type="radio" name="primitives" value="points"  checked > Aristas   <br>
+  <input type="radio" name="primitives" value="edges"  > Caras <br>
   <!--input type="radio" name="primitives" value="faces" > Faces <br-->
   </div>
+<br>
 
-<canvas id="glcanvas" width="1600" height="800"></canvas>
-<input  type="checkbox" id="pickImg" /*checked*/>Picking Render <br>
+<div  class="color" id="overlayPickImg">
+Frame de selección <input  type="checkbox" id="pickImg" /*checked*/> <br></div>
 
-<!--div id="overlayRT2">
-  <input type="range" min="0" max="10" value="1.5" class="slider" name="zoom">
-</div-->
-<div> zoom
-<input type="range" min="0" max="10" step="0.1" value="1.5" class="slider" id="zoom"></div>
+  <!--div id="overlayRT2">
+    <input type="range" min="0" max="10" value="1.5" class="slider" name="zoom">
+  </div-->
+  <div  class="color" id="overlayZoom"> <center><b>Zoom</b></center>
+   <input type="range" min="0" max="10" step="0.1" value="1.5" class="slider" id="zoom"></div> 
+  </div>
 
+<div id="InstruccionesPanel" class="color">
+  Bienvenido a Sketchup Lite
+  Selecciona cualquier vertice y arrrastralo
+  Mueve la cámara con el clic derecho.
+</div>
+<canvas id="glcanvas" width="1800" height="900"></canvas>
 
 <script type='text/javascript' src="./mesh-deformable.js"></script>
 </body>
