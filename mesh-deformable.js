@@ -3,6 +3,8 @@ var picker;
 var gl ;
 var zFace1 = -10.0;
 var zFace2 = -5.0;
+var xFace1 = 1.0;
+var xFace2 = 3.0;
 var eye = vec3.fromValues(3,3,3);
 var ctr = vec3.fromValues(0.0, 0.0, zFace1);
 var angleX = Math.PI/6;
@@ -12,10 +14,8 @@ const canvas = document.querySelector('#glcanvas');
 var showPickImg = document.querySelector('#pickImg');
 var zoomSlider = document.querySelector('#zoom');
 
-
-
 const n = 10; 
-var offScreen = true;
+var offScreen = false;
 
 var timeParameter = 0.0;
 var rotYSpeed = 2;
@@ -30,7 +30,7 @@ const  TRIANGLE_FAN   = 0x0006;
 
 var perspectiveType = "perspective";
 var clicTool = "2ndClic";//"cameraClic";//"2ndClic";  //3rdVertex
-var primitivesShowed = "points";
+var primitivesShowed = "faces";//"edges";
 var zoom = 1;
 
 var t = 0;
@@ -46,14 +46,14 @@ const zNear = 0.1;
 const zFar = 100.0;
 
 var mouseX, mouseY;
-var shapeDraw;
+var shapeDraw, primitivesDrawn;
 
 const threePointsDraw = {
   vertices: 
   [
-    1.0,  1.0,   zFace1, 
-    3.0,  -2.5,  zFace1,
-    3.0,  -2.5,  zFace2, 
+    xFace1,  1.0,   zFace1, 
+    xFace2,  -2.5,  zFace1,
+    xFace2,  -2.5,  zFace2, 
   ],
   colors: [
     1.0,  0.0,  1.0,  1.0,
@@ -137,6 +137,21 @@ const cubeLinesDraw = {
   primitiveType: LINES, //LINE_LOOP ,
 }
 
+
+const cubeTrianglesDraw = {
+  
+  indices: [    
+   0,1,2,	1,2,3,
+  1,5,3,	5,3,7,
+  4,5,6,	5,6,7,
+  0,4,2,	4,2,6,
+  0,1,4,	1,4,5,
+  2,3,6,	3,6,7,	       
+  ],
+  indexCount: 36,
+  
+  primitiveType: TRIANGLES, //LINE_LOOP ,
+}
 
 
 var Floor = {
@@ -344,11 +359,18 @@ function main() {
     const deltaTime = now - then;
     then = now;
 
-    if(primitivesShowed == "points"){
-      shapeDraw = cubePointsDraw;  }
-    else if(primitivesShowed == "edges"){
-      cubeLinesDraw.vertices = cubePointsDraw.vertices;
-      shapeDraw = cubeLinesDraw;}
+    shapeDraw = cubePointsDraw;
+
+    //if(primitivesShowed == "points"){
+      //shapeDraw = cubePointsDraw;  }
+    if(primitivesShowed == "edges"){
+      //cubeLinesDraw.vertices = cubePointsDraw.vertices;
+      //shapeDraw = cubePointsDraw;
+    primitivesDrawn = cubeLinesDraw; }
+   else if(primitivesShowed == "faces"){
+      //cubeTrianglesDraw.vertices = cubePointsDraw.vertices;
+      //shapeDraw = cubePointsDraw;
+    primitivesDrawn = cubeTrianglesDraw;}
    // else if(primitivesShowed == "faces")
       //shapeDraw = cubeFacesDraw; //TODO
     
@@ -360,8 +382,6 @@ function main() {
     /* document.onmousedown = function(event) {
         readPixel(event);
     }*/
-    
- 
 
     //funcion que actualiza la posicion de la camara
     tick(now);
@@ -457,12 +477,13 @@ function loadShader(gl, type, source) {
 // 5: just initBuffers, receives data as @param
 function initLinesBuffers(gl, shapeData) {
   
-  var indicesDrawn;
+  var indicesDrawn, auxIndicesDrawn;
   
   if(!offScreen)
     indicesDrawn = shapeData.indices;
   else
     indicesDrawn = cubePointsDraw.indices;
+   
 
   const verticesBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, verticesBuffer);     
@@ -481,10 +502,10 @@ function initLinesBuffers(gl, shapeData) {
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
       new Uint16Array(indicesDrawn), gl.STATIC_DRAW);
   
-    const linesIndexBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, linesIndexBuffer);
+    const indicesDrawnBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesDrawnBuffer);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-      new Uint16Array( cubeLinesDraw.indices), gl.STATIC_DRAW);
+      new Uint16Array( primitivesDrawn.indices), gl.STATIC_DRAW);
 
 
   return {
@@ -492,7 +513,7 @@ function initLinesBuffers(gl, shapeData) {
     color: colorBuffer,
     indices: indexBuffer,
     pickcolors: pickColorBuffer,
-    linesIndices: linesIndexBuffer,
+    showedIndices: indicesDrawnBuffer,
   };
 }
 
@@ -566,10 +587,8 @@ function drawControlPoint(gl, shadersInfo, lineData)
   }
 
 
-  // Tell WebGL which indices to use to index the vertices
+  // Draw Always the vertices points
  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferLine.indices);
-
-  
   {  
     {
       var vertexCount = lineData.indexCount;
@@ -579,15 +598,16 @@ function drawControlPoint(gl, shadersInfo, lineData)
     }
   }
   
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferLine.linesIndices);
+  //Figures showed 
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferLine.showedIndices);
   
  if(!offScreen)
   {
     {
-      var vertexCount = cubeLinesDraw.indexCount;
+      var vertexCount = primitivesDrawn.indexCount;
       const type = gl.UNSIGNED_SHORT;
       const offset = 0;
-      gl.drawElements(cubeLinesDraw.primitiveType, vertexCount, type, offset);
+      gl.drawElements(primitivesDrawn.primitiveType, vertexCount, type, offset);
     }
     
   }
@@ -600,7 +620,7 @@ function drawControlPoint(gl, shadersInfo, lineData)
   /////////////////////////////////////////////////////
   /////////////////////////////////////////////////////
   
- drawFloor(shadersInfo);
+    drawFloor(shadersInfo);
 }
 
 
@@ -933,6 +953,32 @@ UI.prototype.eyeRayPickObj = function(x, y) {
   
 };
 
+
+//UI5: move plane in the same plane
+UI.prototype.eyeRayExtrudePlane = function(x, y) {
+  
+  var t ;
+  var origin = eye;
+  var invMVP = mat4.create();
+  mat4.invert(invMVP,this.modelViewProjection);
+  var ray = getEyeRay(invMVP,  x , y ); 
+ 
+  //https://www.uv.mx/personal/aherrera/files/2014/05/09-Interseccion-de-una-Recta-y-un-Plano-en-3D.pdf
+  this.surfaceNormal = vec3.fromValues(1, 0, 0);  
+  this.surfaceConstraint = xFace2 ; //el plano Z 
+  
+  var denom = vec3.dot(this.surfaceNormal, ray);
+  t =  (this.surfaceConstraint - vec3.dot(this.surfaceNormal, origin)) / denom;
+ 
+  var hit = vec3.create();
+  vec3.scale(ray, ray, t);
+  vec3.add(hit, origin, ray);
+  
+  return hit;
+  
+};
+
+
 //UI7: modifyZoom
 zoomSlider.oninput = function() {
   zoomZ = this.value;
@@ -942,103 +988,7 @@ zoomSlider.oninput = function() {
 
 
 
- function movePickVertex (event)
-  {
-   // isDrawing = true;
-
-    xClick2 = canvasMouseNormalizedPos( event).x ;
-    yClick2 = canvasMouseNormalizedPos( event).y ; 
-
-    //console.log("drawing "+ xClick2 +";"+ yClick2);
-
-    if(perspectiveType == "perspective" )
-    {
-      var pointHit = ui.eyeRayPickObj(xClick2, yClick2); 
-      xClick2 = pointHit[0]; ///zShape/tan(FOV/2)
-      yClick2 = pointHit[1];
-      zClick2 = pointHit[2];
-    }
-    else if(perspectiveType == "orthogonal" ) //funciona pero no tanto
-    {
-      xClick2 = xClick2*orthoWidth/2;
-      yClick2 = yClick2*orthoHeight/2;
-    }
-
-    //console.log(xClick2, yClick2,); 
-    //console.log("true pos "+ xClick2 +";"+ yClick2);
-
-    var vertexI = 3*(picker.objI -1) ;
-
-    shapeDraw.vertices[vertexI] = xClick2;
-    shapeDraw.vertices[vertexI+1] = yClick2;    
-    shapeDraw.vertices[vertexI+2] = zClick2;
-  }
-
-  
-  function set3rdVertex (event)
-  {
-   // isDrawing = true;
-        
-    xClick = canvasMouseNormalizedPos( event).x ;
-    yClick = canvasMouseNormalizedPos( event).y ; 
-    
-    var pointHit = ui.eyeRayClicPlane(xClick, yClick); 
-    xClick2 = pointHit[0]; ///zShape/tan(FOV/2)
-    yClick2 = pointHit[1];
-
-    
-    shapeDraw.vertices[14] -= yClick*zDragFactor;
-    shapeDraw.vertices[17] -=  yClick*zDragFactor;
-    shapeDraw.vertices[20] -=  yClick*zDragFactor;
-    shapeDraw.vertices[23] -=  yClick*zDragFactor;       
-        
-    zFace2 = shapeDraw.vertices[23];
-
-  }
-
-
-function setEndVertex (event)
-  {
-
-    xClick2 = canvasMouseNormalizedPos( event).x ;
-    yClick2 = canvasMouseNormalizedPos( event).y ; 
-
-    //console.log("drawing "+ xClick2 +";"+ yClick2);
-
-    if(perspectiveType == "perspective" )
-    {
-      var pointHit = ui.eyeRayClicPlane(xClick2, yClick2); 
-      xClick2 = pointHit[0]; ///zShape/tan(FOV/2)
-      yClick2 = pointHit[1];
-    }
-    else if(perspectiveType == "orthogonal" ) //funciona pero no tanto
-    {
-      xClick2 = xClick2*orthoWidth/2;
-      yClick2 = yClick2*orthoHeight/2;
-    }
-
-    console.log(xClick2, yClick2,); 
-    //console.log("true pos "+ xClick2 +";"+ yClick2);
-
-    shapeDraw.vertices[3] = xClick2;
-    shapeDraw.vertices[4] = yClick1;
-
-    shapeDraw.vertices[6] = xClick1;
-    shapeDraw.vertices[7] = yClick2;
-
-    shapeDraw.vertices[9] = xClick2;
-    shapeDraw.vertices[10] = yClick2;    
-
-    //Cube
-    shapeDraw.vertices[15] = xClick2;
-    shapeDraw.vertices[16] = yClick1;
-
-    shapeDraw.vertices[18] = xClick1;
-    shapeDraw.vertices[19] = yClick2;
-
-    shapeDraw.vertices[21] = xClick2;
-    shapeDraw.vertices[22] = yClick2;    
-  }
+ 
 
 //Picker Class
 //P0
@@ -1280,3 +1230,118 @@ function drawFloor(shadersInfo)
     gl.drawElements(Floor.primitiveType, vertexCount, type, offset);
   }
 }
+
+
+//interaction Functions
+
+
+// I!:
+function movePickVertex (event)
+  {
+   // isDrawing = true;
+
+    xClick2 = canvasMouseNormalizedPos( event).x ;
+    yClick2 = canvasMouseNormalizedPos( event).y ; 
+
+    //console.log("drawing "+ xClick2 +";"+ yClick2);
+
+    if(perspectiveType == "perspective" )
+    {
+      var pointHit = ui.eyeRayPickObj(xClick2, yClick2); 
+      xClick2 = pointHit[0]; ///zShape/tan(FOV/2)
+      yClick2 = pointHit[1];
+      zClick2 = pointHit[2];
+    }
+    else if(perspectiveType == "orthogonal" ) //funciona pero no tanto
+    {
+      xClick2 = xClick2*orthoWidth/2;
+      yClick2 = yClick2*orthoHeight/2;
+    }
+
+    //console.log(xClick2, yClick2,); 
+    //console.log("true pos "+ xClick2 +";"+ yClick2);
+
+    var vertexI = 3*(picker.objI -1) ;
+
+    shapeDraw.vertices[vertexI] = xClick2;
+    shapeDraw.vertices[vertexI+1] = yClick2;    
+    shapeDraw.vertices[vertexI+2] = zClick2;
+  }
+
+ 
+
+//I2:
+function setEndVertex (event)
+  {
+
+    xClick2 = canvasMouseNormalizedPos( event).x ;
+    yClick2 = canvasMouseNormalizedPos( event).y ; 
+
+    //console.log("drawing "+ xClick2 +";"+ yClick2);
+
+    if(perspectiveType == "perspective" )
+    {
+      var pointHit = ui.eyeRayClicPlane(xClick2, yClick2); 
+      xClick2 = pointHit[0]; ///zShape/tan(FOV/2)
+      yClick2 = pointHit[1];
+    }
+    else if(perspectiveType == "orthogonal" ) //funciona pero no tanto
+    {
+      xClick2 = xClick2*orthoWidth/2;
+      yClick2 = yClick2*orthoHeight/2;
+    }
+
+    console.log(xClick2, yClick2,); 
+    //console.log("true pos "+ xClick2 +";"+ yClick2);
+
+    shapeDraw.vertices[3] = xClick2;
+    shapeDraw.vertices[4] = yClick1;
+
+    shapeDraw.vertices[6] = xClick1;
+    shapeDraw.vertices[7] = yClick2;
+
+    shapeDraw.vertices[9] = xClick2;
+    shapeDraw.vertices[10] = yClick2;    
+
+    //Cube
+    shapeDraw.vertices[15] = xClick2;
+    shapeDraw.vertices[16] = yClick1;
+
+    shapeDraw.vertices[18] = xClick1;
+    shapeDraw.vertices[19] = yClick2;
+
+    shapeDraw.vertices[21] = xClick2;
+    shapeDraw.vertices[22] = yClick2;    
+    
+    xFace2 = shapeDraw.vertices[21];
+  }
+
+
+ 
+//I2: Extrude face through x axis
+  function set3rdVertex (event)
+  {
+   // isDrawing = true;
+        
+    xClick = canvasMouseNormalizedPos( event).x ;
+    yClick = canvasMouseNormalizedPos( event).y ; 
+    
+    var pointHit = ui.eyeRayExtrudePlane(xClick, yClick); 
+    xClick2 = pointHit[0]; ///zShape/tan(FOV/2)
+    yClick2 = pointHit[1];
+    zClick2 = pointHit[2];
+
+    /*
+    shapeDraw.vertices[14] -= yClick*zDragFactor;
+    shapeDraw.vertices[17] -=  yClick*zDragFactor;
+    shapeDraw.vertices[20] -=  yClick*zDragFactor;
+    shapeDraw.vertices[23] -=  yClick*zDragFactor;       */
+    
+    shapeDraw.vertices[14] = zClick2;
+    shapeDraw.vertices[17] =  zClick2;
+    shapeDraw.vertices[20] =  zClick2;
+    shapeDraw.vertices[23] =  zClick2;  
+        
+    zFace2 = shapeDraw.vertices[23];
+
+  }
