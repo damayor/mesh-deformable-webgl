@@ -1,3 +1,9 @@
+ /** Universidad de los Andes
+* 2048 - Computacion Visual Interactiva
+* David Ricardo Mayorga H.
+* Proyecto Final: Cubo deformable
+**/
+
 var ui;
 var picker;
 var gl ;
@@ -30,7 +36,7 @@ const  TRIANGLE_FAN   = 0x0006;
 
 var perspectiveType = "perspective";
 var clicTool = "2ndClic";//"cameraClic";//"2ndClic";  //3rdVertex
-var primitivesShowed = "faces";//"edges";
+var primitivesShowed = "edges";//"edges";
 var zoom = 1;
 
 var t = 0;
@@ -46,7 +52,7 @@ const zNear = 0.1;
 const zFar = 100.0;
 
 var mouseX, mouseY;
-var shapeDraw, primitivesDrawn;
+var primitivesDrawn;
 
 const threePointsDraw = {
   vertices: 
@@ -97,35 +103,12 @@ const cubePointsDraw = {
     0,  1,  3,  2,  4, 5, 6, 7,            
   ],
   indexCount: 8,
-  primitiveType: POINTS, //LINE_LOOP ,
+  primitiveType: POINTS, 
 }
 
 //draw the 12 lines of a cube
-const cubeLinesDraw = {
-  /*vertices: getCubeVertices( threePointsDraw.vertices[0],threePointsDraw.vertices[1],threePointsDraw.vertices[2],            threePointsDraw.vertices[3],threePointsDraw.vertices[4],threePointsDraw.vertices[5],
-   threePointsDraw.vertices[8],), 
-  colors: [
-    1.0,  0.0,  1.0,  1.0,
-    0.0,  1.0,  1.0,  1.0,
-    0.5,  0.0,  1.0,  1.0,
-    1.0,  1.0,  1.0,  1.0,
-    
-    1.0,  0.0,  0.0,  1.0,
-    0.0,  1.0,  0.0,  1.0,
-    1.0,  1.0,  0.0,  1.0,
-    0.0,  0.0,  1.0,  1.0,
-  ],
-   pickColors: [
-      0.78,0.85,0.51,1.0,
-      0.14,0.79,0.51,1.0,
-      0.03,0.98,0.59,1.0,
-      0.25,0.81,0.41,1.0,
-      
-      0.57,0.17,0.55,1.0,
-      0.55,0.68,0.94,1.0,
-      0.3, 0.26,0.42,1.0,
-      0.66,0.46,0.81,1.0,
-  ],*/
+const cubeLines = {
+ 
   
   indices: [    
     0,  1,  2,  3,     1, 3, 2, 0,
@@ -134,11 +117,11 @@ const cubeLinesDraw = {
   ],
   indexCount: 24,
   
-  primitiveType: LINES, //LINE_LOOP ,
+  primitiveType: LINES, 
 }
 
 
-const cubeTrianglesDraw = {
+const cubeTriangles = {
   
   indices: [    
    0,1,2,	1,2,3,
@@ -150,7 +133,7 @@ const cubeTrianglesDraw = {
   ],
   indexCount: 36,
   
-  primitiveType: TRIANGLES, //LINE_LOOP ,
+  primitiveType: TRIANGLES, 
 }
 
 
@@ -209,22 +192,7 @@ var Floor = {
               }
 }
 
-/*
-const sphereProperties = {  
-  data: calculateVerticesSphere(1, n),
-  indexCount: 6*n*n,
-  primitiveType: TRIANGLES ,
-  textureImg: 'http://i.imgur.com/vGbKR7M.png',
-  
-}
 
-const coneProperties = {  
-  data: calculateVerticesCone(1, 1.4, n),
-  indexCount: n + 2 , 
-  primitiveType: TRIANGLE_FAN ,
-  textureImg: 'https://images-na.ssl-images-amazon.com/images/I/71g7BoShMQL._SY355_.jpg',
-  
-}*/
 
 $(document).ready(
   
@@ -239,15 +207,7 @@ $(document).ready(
         //figureSelected = $('input:radio[name=camera_figure]:checked').val();
         
 			  //alert( clicTool +'-' + perspectiveType + primitivesShowed  +valueZoom);			 
-			}   );
-     
-   /*  $('input:range').slider({
-    change: function(event, ui) { 
-        alert(ui.value); 
-        console.log(ui.value +"esto escogido");
-    } 
-})*/
-     
+			}   );  
 		 }
 );
 
@@ -261,15 +221,9 @@ function main() {
   
   gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
   
-  //window.onload from 2:
-    
-  
-  // If we don't have a GL context, give up now
   if (!gl) {
-   // alert('Unable to initialize WebGL. Your browser or machine may not support it.');
     return;
   }
-
 
   // Vertex shader program
 
@@ -313,7 +267,7 @@ function main() {
             return;
         }
          if(uWireframe){
-              gl_FragColor = vec4(0.05,0.05,0.05,0.0);
+              gl_FragColor = vec4(0.5,0.5,0.5,1.0);
               return;
         }
         
@@ -348,10 +302,8 @@ function main() {
 
   var then = 0;
   ui = new UI();
-  picker = new Picker(); //debugaca
+  picker = new Picker(); 
     Floor.build(80,2);
-
-  
 
   // Draw the scene repeatedly
   function render(now) {
@@ -359,29 +311,19 @@ function main() {
     const deltaTime = now - then;
     then = now;
 
-    shapeDraw = cubePointsDraw;
 
-    //if(primitivesShowed == "points"){
-      //shapeDraw = cubePointsDraw;  }
     if(primitivesShowed == "edges"){
-      //cubeLinesDraw.vertices = cubePointsDraw.vertices;
-      //shapeDraw = cubePointsDraw;
-    primitivesDrawn = cubeLinesDraw; }
-   else if(primitivesShowed == "faces"){
-      //cubeTrianglesDraw.vertices = cubePointsDraw.vertices;
-      //shapeDraw = cubePointsDraw;
-    primitivesDrawn = cubeTrianglesDraw;}
-   // else if(primitivesShowed == "faces")
-      //shapeDraw = cubeFacesDraw; //TODO
+
+      primitivesDrawn = cubeLines; }
+    else if(primitivesShowed == "faces"){
+
+      primitivesDrawn = cubeTriangles;}
+ 
     
-    xClick1 = shapeDraw.vertices[0];
-    yClick1 = shapeDraw.vertices[1];
+    xClick1 = cubePointsDraw.vertices[0];
+    yClick1 = cubePointsDraw.vertices[1];
         
     const pickBuffers = initFrameBuffer(gl);
-    
-    /* document.onmousedown = function(event) {
-        readPixel(event);
-    }*/
 
     //funcion que actualiza la posicion de la camara
     tick(now);
@@ -389,12 +331,12 @@ function main() {
     gl.bindFramebuffer(gl.FRAMEBUFFER, pickBuffers.frameBuffer);
     offScreen = true;
     gl.uniform1i(shadersInfo.uniformLocations.uOffscreen, offScreen);
-    drawScene(gl, shadersInfo, deltaTime,  shapeDraw);
+    drawScene(gl, shadersInfo, deltaTime,  cubePointsDraw);
     
     offScreen = showPickImg.checked;
     gl.uniform1i(shadersInfo.uniformLocations.uOffscreen, offScreen); 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); //pinte pantalla normal
-    drawScene(gl, shadersInfo, deltaTime, shapeDraw);
+    drawScene(gl, shadersInfo, deltaTime, cubePointsDraw);
 
     requestAnimationFrame(render);
   }
@@ -433,7 +375,6 @@ function drawScene(gl, shadersInfo, deltaTime, shapeData) {
 
 }
 
-//
 // Initialize a shader program, so WebGL knows how to draw our data
 // 3:
 function loadShaderProgram(gl, vsSource, fsSource) {
@@ -520,11 +461,8 @@ function initLinesBuffers(gl, shapeData) {
 //6: Draw and set shader uniforms
 function drawControlPoint(gl, shadersInfo, lineData)
 {
-  //@requires ProgramInfo de los shaders...
-  
-  //Dicho lineData debe estar parametrizado con la interaccion del usuario
-  
-  
+  //@requires ProgramInfo de los shaders
+   
     gl.uniform1i(
       shadersInfo.uniformLocations.uWireframe,
       lineData.wireframe);
@@ -586,7 +524,6 @@ function drawControlPoint(gl, shadersInfo, lineData)
         shadersInfo.attribLocations.vertexPickColor);
   }
 
-
   // Draw Always the vertices points
  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferLine.indices);
   {  
@@ -621,36 +558,6 @@ function drawControlPoint(gl, shadersInfo, lineData)
   /////////////////////////////////////////////////////
   
     drawFloor(shadersInfo);
-}
-
-
-function generateVertexShader()
-{
-  //TODO return string
-}
-
-function generateFragmentShader()
-{
-  //TODO return string
-}
-
-
-function getCubeVertices(p1x, p1y, p1z,
-                              p2x, p2y, p2z,
-                              /*p3x, p3y,*/ p3z)
-{
-  var ver = [];
-  
-  ver = ver.concat(p1x,p1y,p1z);
-  ver = ver.concat(p2x,p1y,p1z);
-  ver = ver.concat(p1x,p2y,p1z);
-  ver = ver.concat(p2x,p2y,p2z);
-  ver = ver.concat(p1x,p1y,p3z);
-  ver = ver.concat(p2x,p1y,p3z);
-  ver = ver.concat(p1x,p2y,p3z);
-  ver = ver.concat(p2x,p2y,p3z);
-  
-  return ver;
 }
 
 //7:
@@ -722,7 +629,6 @@ function tick(timeSinceStart) {
 // ------- UI --------------------------------------
 
 // Clase del Path tracing - https://github.com/evanw/webgl-path-tracing
-
 //UI1:
 function UI() {
   //this.renderer = new Renderer();
@@ -733,7 +639,7 @@ function UI() {
   
 }
 
-//UI3: !!! Actualiza la camara!!!!!
+//UI2: !!! Actualiza la camara!!!!!
 UI.prototype.update = function(timeSinceStart) {
   mat4.lookAt(this.modelview, 
                 vec3.fromValues(eye[0], eye[1], eye[2]), 
@@ -749,132 +655,6 @@ UI.prototype.update = function(timeSinceStart) {
   //  this.renderer.update(this.modelviewProjection, timeSinceStart);
   //@dep R3
 };
-
-//6: 
-var mouseDown = false, oldX, oldY;
-var selectDown = false;
-
-//TODO para diferenciar entre 2nd, 3rd o move camra
-document.onmousedown = function(event) {
-  var mouse = canvasMousePos(event);
-  var mouseNorm = canvasMouseNormalizedPos(event);
-  oldX = mouse.x;
-  oldY = mouse.y;
-  //   if(mouse.x >=  0 && mouse.x < 512 && mouse.y >= 0 && mouse.y < 512) {
-
-  if (event.which == 3)
-  //if(clicTool == "cameraClic")  //separa cualquier instruccin de mover camara, y lo hizo por coincidencia :P
-  {
-    mouseDown = true; //!ui.mouseDown(mouse.x, mouse.y);
-  }
-  /*else if(clicTool == "selectClic")  
-  {
-    selectDown = true; //!ui.mouseDown(mouse.x, mouse.y);
-    //var readout = readPixel(event);
-    findPicked(event);
-  }*/
-  else
-  {
-    ui.mouseDown(mouseNorm.x, mouseNorm.y);
-  }
-    
-  //     // disable selection because dragging is used for rotating the camera and moving objects
-  //     return false;
-  //   }
-
-  return true;
-
-  //@dep 5, ui4
-};
-
-/** drmayor 
-* 7:
-**/
-document.onmousemove = function(event) {
-  var mouse = canvasMousePos(event);
-  
-
-  if(mouseDown) {
-    // update the angles based on how far we moved since last time
-    //console.log("angles " + angleX, angleY);
-    angleY -= (mouse.x - oldX) *0.01 ;
-    angleX += (mouse.y - oldY) *0.01;
-    
-    // no verlo de cabeza
-    angleX = Math.max(angleX, -Math.PI / 2 + 0.01);
-    angleX = Math.min(angleX, Math.PI / 2 - 0.01);
-    
-    oldX = mouse.x;
-    oldY = mouse.y;
-  } 
- /* else {
-    //var canvasPos = elementPos(canvas);
-    var mouseNorm = canvasMouseNormalizedPos(event);
-    ui.mouseMove(mouseNorm.x, mouseNorm.y);
-  }*/
-  
-  
-  //@dep 3, 5, UI5
-};
-
-/** drmayor
-* Al soltar el clic, dejar quieta la camara
-* 8:
-**/
-document.onmouseup = function(event) {
-  mouseDown = false;
-  isDrawing = false; 
-
-  var mouse = canvasMousePos(event);
-  
-  //ui.mouseUp(mouse.x, mouse.y);
-    //@dep 5, UI6
-  
-  if(clicTool == "selectClic")
-  {
-    gl.canvas.removeEventListener("mousemove", movePickVertex);   
-  } 
-  if(clicTool == "2ndClic")
-  {
-    gl.canvas.removeEventListener("mousemove", setEndVertex);   
-  } 
-  else if(clicTool == "3rdClic")
-  {
-    gl.canvas.removeEventListener("mousemove", set3rdVertex);   
-  } 
-  deseleccionar();
-
-
-    
-  
-}
-  
-//Eyeray to clic pos vector in 3D world
-//U1:
-function getEyeRay(invMVP, x, y) {
-  
-  var rayMatrix = mat4.create();
-  rayMatrix[0] = x;   rayMatrix[1] = y;  rayMatrix[2] = 0;  rayMatrix[3] = 1;  
-  mat4.multiply(invMVP, invMVP, rayMatrix);  
-  
-  //solo queremos el vector
-  var eyeRay = vec4.fromValues(invMVP[0],invMVP[1], invMVP[2], invMVP[3]);
-  
-  eyeRay  = divideByW(eyeRay);  
-  var v3 = vec3.create();
-  
-  vec3.subtract( v3, vec3.fromValues(eyeRay[0], eyeRay[1], eyeRay[2]),  eye);
-  
-  return v3;
-  
-  //@dep V1,V3
-}
-
-
-function divideByW( vec ) {
-  var w = vec [vec.length - 1];
-  return vec4.fromValues(vec[0]/w, vec[1]/w, vec[2]/w, vec[3]/w);
-}
 
 /** drmayor
 * UI4: Intersección del rayo de clic con un objeto del canvas
@@ -979,12 +759,36 @@ UI.prototype.eyeRayExtrudePlane = function(x, y) {
 };
 
 
-//UI7: modifyZoom
-zoomSlider.oninput = function() {
-  zoomZ = this.value;
-  zoomSlider.nodeValue = this.value;
-  console.log(zoomZ);
-};
+  
+//Eyeray to clic pos vector in 3D world
+//U1:
+function getEyeRay(invMVP, x, y) {
+  
+  var rayMatrix = mat4.create();
+  rayMatrix[0] = x;   rayMatrix[1] = y;  rayMatrix[2] = 0;  rayMatrix[3] = 1;  
+  mat4.multiply(invMVP, invMVP, rayMatrix);  
+  
+  //solo queremos el vector
+  var eyeRay = vec4.fromValues(invMVP[0],invMVP[1], invMVP[2], invMVP[3]);
+  
+  eyeRay  = divideByW(eyeRay);  
+  var v3 = vec3.create();
+  
+  vec3.subtract( v3, vec3.fromValues(eyeRay[0], eyeRay[1], eyeRay[2]),  eye);
+  
+  return v3;
+  
+  //@dep V1,V3
+}
+
+
+function divideByW( vec ) {
+  var w = vec [vec.length - 1];
+  return vec4.fromValues(vec[0]/w, vec[1]/w, vec[2]/w, vec[3]/w);
+}
+
+
+
 
 
 
@@ -998,18 +802,15 @@ function Picker() {
     this.framebuffer = null;
     this.renderbuffer = null;
     this.pickPos = vec3.create();
-    
-   // this.configure();
- // initFrameBuffer(gl, this);
-    
+   
 };
 
 
 
-//P1:
-//var frametexture;
+//P1: 
+//Crea el buffer para pintar los objetos seleccionables
 var framebuffer;
- var texture;
+var texture;
 function initFrameBuffer(gl)
 {
 
@@ -1047,7 +848,7 @@ function initFrameBuffer(gl)
   
 }
 
-//P2:
+//P2: lee el pixel del canvas
 function readPixel(event)
 {
   
@@ -1065,9 +866,12 @@ function readPixel(event)
 }
 
 //P3:
+/**compara el pixel seleccionado con otro color
+    resta lo leido por el color. si todos son caSsi 0, es el mismo color
+**/
 function comparePick(color, readout)
 {
-  //resta lo leido por el color. si todos son caSsi 0, es el mismo color
+
   //   console.info('comparing object '+object.alias+' diffuse ('+Math.round(color[0]*255)+','+Math.round(color[1]*255)+','+Math.round(color[2]*255)+') == readout ('+ readout[0]+','+ readout[1]+','+ readout[2]+')');
     return (
       Math.abs(Math.round(color[0]*255) - readout[0]) <= 1 &&
@@ -1090,7 +894,7 @@ function findPicked(event)
     if(comparePick(color, readout))
     {
       picker.objI = (i/4) + 1;
-      console.log("El seleccionado es " + picker.objI);
+     // console.log("El seleccionado es " + picker.objI);
       
       //colorear el seleccionado
       cubePointsDraw.colors[i+3] = 0.2;
@@ -1125,7 +929,7 @@ Picker.prototype.getPickPos =  function()
 {
     var vertexI = 3*(this.objI -1) ;
     var pickObjPos = vec3.fromValues( 
-        shapeDraw.vertices[vertexI],  shapeDraw.vertices[vertexI+1], shapeDraw.vertices[vertexI+2]) ;
+        cubePointsDraw.vertices[vertexI],  cubePointsDraw.vertices[vertexI+1], cubePointsDraw.vertices[vertexI+2]) ;
   //console.log(shapeDraw.vertices[vertexI],  shapeDraw.vertices[vertexI+1], shapeDraw.vertices[vertexI+2]);
   
    return pickObjPos;
@@ -1138,7 +942,7 @@ function Point(location, pickColor, color, index)
   this.location   = location ; //vec3.create();
   this.pickColor  = pickColor ;//vec4.create()
   this.diffuse    = color; //vec4.create()
-  this.index    = i;
+  this.index    = index;
   
   this.pickColor = [1.0, 0.0, 0.0, 1.0]; //randomize
   
@@ -1146,14 +950,9 @@ function Point(location, pickColor, color, index)
   
 }
 
-
-
 function Scene()
 {
-  this.objs = [];
-  
-  
-  
+  this.objs = [];  
 }*/
 
 // Util 1: pintar piso
@@ -1220,11 +1019,10 @@ function drawFloor(shadersInfo)
       shadersInfo.attribLocations.vertexPickColor);
   }
 
-  // Tell WebGL which indices to use to index the vertices
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferFloor.indices);
 
   {
-    const vertexCount = Floor.indexCount; //50 ;//lineData.indexCount; //250-320 //fll
+    const vertexCount = Floor.indexCount; 
     const type = gl.UNSIGNED_SHORT;
     const offset = 0;
     gl.drawElements(Floor.primitiveType, vertexCount, type, offset);
@@ -1232,7 +1030,29 @@ function drawFloor(shadersInfo)
 }
 
 
-//interaction Functions
+//Interaction Functions
+
+//7: 
+//Genera los 8 vertices de un paralelepipedo a partir de los vertices: 
+//          Top-Left-Far, Bottom-Right-Far y Near
+
+function getCubeVertices(p1x, p1y, p1z,
+                              p2x, p2y, p2z,
+                              /*p3x, p3y,*/ p3z)
+{
+  var ver = [];
+  
+  ver = ver.concat(p1x,p1y,p1z);
+  ver = ver.concat(p2x,p1y,p1z);
+  ver = ver.concat(p1x,p2y,p1z);
+  ver = ver.concat(p2x,p2y,p2z);
+  ver = ver.concat(p1x,p1y,p3z);
+  ver = ver.concat(p2x,p1y,p3z);
+  ver = ver.concat(p1x,p2y,p3z);
+  ver = ver.concat(p2x,p2y,p3z);
+  
+  return ver;
+}
 
 
 // I!:
@@ -1263,9 +1083,9 @@ function movePickVertex (event)
 
     var vertexI = 3*(picker.objI -1) ;
 
-    shapeDraw.vertices[vertexI] = xClick2;
-    shapeDraw.vertices[vertexI+1] = yClick2;    
-    shapeDraw.vertices[vertexI+2] = zClick2;
+    cubePointsDraw.vertices[vertexI] = xClick2;
+    cubePointsDraw.vertices[vertexI+1] = yClick2;    
+    cubePointsDraw.vertices[vertexI+2] = zClick2;
   }
 
  
@@ -1291,29 +1111,29 @@ function setEndVertex (event)
       yClick2 = yClick2*orthoHeight/2;
     }
 
-    console.log(xClick2, yClick2,); 
+    //console.log(xClick2, yClick2,); 
     //console.log("true pos "+ xClick2 +";"+ yClick2);
 
-    shapeDraw.vertices[3] = xClick2;
-    shapeDraw.vertices[4] = yClick1;
+    cubePointsDraw.vertices[3] = xClick2;
+    cubePointsDraw.vertices[4] = yClick1;
 
-    shapeDraw.vertices[6] = xClick1;
-    shapeDraw.vertices[7] = yClick2;
+    cubePointsDraw.vertices[6] = xClick1;
+    cubePointsDraw.vertices[7] = yClick2;
 
-    shapeDraw.vertices[9] = xClick2;
-    shapeDraw.vertices[10] = yClick2;    
+    cubePointsDraw.vertices[9] = xClick2;
+    cubePointsDraw.vertices[10] = yClick2;    
 
     //Cube
-    shapeDraw.vertices[15] = xClick2;
-    shapeDraw.vertices[16] = yClick1;
+    cubePointsDraw.vertices[15] = xClick2;
+    cubePointsDraw.vertices[16] = yClick1;
 
-    shapeDraw.vertices[18] = xClick1;
-    shapeDraw.vertices[19] = yClick2;
+    cubePointsDraw.vertices[18] = xClick1;
+    cubePointsDraw.vertices[19] = yClick2;
 
-    shapeDraw.vertices[21] = xClick2;
-    shapeDraw.vertices[22] = yClick2;    
+    cubePointsDraw.vertices[21] = xClick2;
+    cubePointsDraw.vertices[22] = yClick2;    
     
-    xFace2 = shapeDraw.vertices[21];
+    xFace2 = cubePointsDraw.vertices[21];
   }
 
 
@@ -1331,17 +1151,106 @@ function setEndVertex (event)
     yClick2 = pointHit[1];
     zClick2 = pointHit[2];
 
-    /*
-    shapeDraw.vertices[14] -= yClick*zDragFactor;
-    shapeDraw.vertices[17] -=  yClick*zDragFactor;
-    shapeDraw.vertices[20] -=  yClick*zDragFactor;
-    shapeDraw.vertices[23] -=  yClick*zDragFactor;       */
     
-    shapeDraw.vertices[14] = zClick2;
-    shapeDraw.vertices[17] =  zClick2;
-    shapeDraw.vertices[20] =  zClick2;
-    shapeDraw.vertices[23] =  zClick2;  
+    cubePointsDraw.vertices[14] = zClick2;
+    cubePointsDraw.vertices[17] =  zClick2;
+    cubePointsDraw.vertices[20] =  zClick2;
+    cubePointsDraw.vertices[23] =  zClick2;  
         
-    zFace2 = shapeDraw.vertices[23];
+    zFace2 = cubePointsDraw.vertices[23];
 
   }
+
+
+//Document events
+
+//6: 
+var moveCamera = false, oldX, oldY;
+var selectDown = false;
+
+document.onmousedown = function(event) {
+  var mouse = canvasMousePos(event);
+  var mouseNorm = canvasMouseNormalizedPos(event);
+  oldX = mouse.x;
+  oldY = mouse.y;
+
+  //activar camara con el boton derecho
+  if (event.which == 3) 
+
+  {
+    moveCamera = true; 
+    document.oncontextmenu = function(){return false} 
+
+  }
+
+  else
+  {
+    ui.mouseDown(mouseNorm.x, mouseNorm.y);
+  }
+    
+
+
+  return true;
+
+  //@dep 5, ui4
+};
+
+/** drmayor 
+* 7:
+**/
+document.onmousemove = function(event) {
+  var mouse = canvasMousePos(event);
+  
+
+  if(moveCamera) {
+    // update the angles based on how far we moved since last time
+    //console.log("angles " + angleX, angleY);
+    angleY -= (mouse.x - oldX) *0.01 ;
+    angleX += (mouse.y - oldY) *0.01;
+    
+    // no verlo de cabeza
+    angleX = Math.max(angleX, -Math.PI / 2 + 0.01);
+    angleX = Math.min(angleX, Math.PI / 2 - 0.01);
+    
+    oldX = mouse.x;
+    oldY = mouse.y;
+  } 
+
+  
+  //@dep 3, 5, UI5
+};
+
+/** drmayor
+* Al soltar el clic, dejar quieta la camara
+* 8:
+**/
+document.onmouseup = function(event) {
+  moveCamera = false;
+  isDrawing = false; 
+
+  var mouse = canvasMousePos(event);
+  
+    //@dep 5, UI6
+  
+  if(clicTool == "selectClic")
+  {
+    gl.canvas.removeEventListener("mousemove", movePickVertex);   
+  } 
+  if(clicTool == "2ndClic")
+  {
+    gl.canvas.removeEventListener("mousemove", setEndVertex);   
+  } 
+  else if(clicTool == "3rdClic")
+  {
+    gl.canvas.removeEventListener("mousemove", set3rdVertex);   
+  } 
+  deseleccionar();
+  
+}
+
+//UI7: modifyZoom
+zoomSlider.oninput = function() {
+  zoomZ = this.value;
+  zoomSlider.nodeValue = this.value;
+  //console.log(zoomZ); //305
+};
